@@ -16,4 +16,4 @@ google-auth==2.38.0                 # token refresh + the OIDC check on Pub/Sub 
 anthropic==0.112.0            # Claude LLM provider (LLM_PROVIDER=anthropic + ANTHROPIC_API_KEY)
 openai==1.109.1               # OpenAI, Azure OpenAI and every OpenAI-compatible endpoint (incl. per-org keys)
 signxml==5.1.0                # SAML 2.0 login: verifies the IdP's signature (app/auth/oauth/saml.py)
-pypdf==5.1.0                  # PDF text extraction for the knowledge base (app/knowledge_base.py)
+pypdf==6.19.0                  # PDF text extraction for the knowledge base (app/knowledge_base.py)
