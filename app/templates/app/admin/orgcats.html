@@ -1,0 +1,69 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Categorie-templates') }} — {{ _('Beheer') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:820px;">
+    <div style="display:flex; align-items:center; margin-bottom:4px;">
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em; flex:1;">{{ _('Categorie-templates') }}</div>
+      <button class="btn btn-primary" data-cat-new>{{ _('+ Nieuwe categorie') }}</button>
+    </div>
+    <div class="page-sub" style="margin-bottom:18px;">{{ _('Organisatiebrede categorieën met subcategorieën en instructies. Deze worden uitgerold naar alle gebruikers.') }}</div>
+
+    <div style="display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:15px 18px; margin-bottom:16px;">
+      <div style="flex:1;"><div style="font-size:13.5px; font-weight:700;">{{ _('Afdwingen voor alle gebruikers') }}</div><div style="font-size:12px; color:var(--muted);">{{ _('Aan: iedereen krijgt deze categorieën. Uit: gebruikers mogen ze zelf aanpassen.') }}</div></div>
+      <div class="toggle {{ 'on' if org_push }}" data-action="toggle-orgpush"><div class="knob"></div></div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:15px 18px; margin-bottom:16px;">
+      <div style="flex:1;">
+        <div style="font-size:13.5px; font-weight:700;">{{ _('Nummers voor categorieën in Outlook') }}</div>
+        <div style="font-size:12px; color:var(--muted);">
+          {{ _('Outlook sorteert categorieën alfabetisch. Met een nummer ervoor staat de belangrijkste bovenaan.') }}
+          {% if categories %}
+            <br><span style="color:var(--muted-3);">{{ _('Bijvoorbeeld:') }}
+            {% for c in categories[:3] %}<code>{{ loop.index }}. {{ c.name }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="toggle {{ 'on' if outlook_numbering }}" data-action="toggle-outlook-numbering"><div class="knob"></div></div>
+    </div>
+
+    {# Reddingsknop: mailboxen die vóór de her-tag-fix een nummering-switch of
+       hernoeming meemaakten, dragen oude labels naast de nieuwe. Deze sweep
+       herschrijft bestaande mail naar precies één juiste categorie. #}
+    <div class="card" style="padding:14px 18px; margin-bottom:16px; display:flex; align-items:center; gap:12px;">
+      <div style="flex:1;">
+        <div style="font-size:13.5px; font-weight:700;">{{ _('Outlook-labels opruimen') }}</div>
+        <div style="font-size:12px; color:var(--muted);">
+          {{ _('Staan er nog oude of dubbele Otto-categorieën op bestaande mail (bv. na het omzetten van de nummering)? Dit herschrijft ze naar precies één juiste naam per bericht. Je eigen labels blijven staan.') }}
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" data-action="realign-outlook-labels">↻ {{ _('Ruim op') }}</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      {% for c in categories %}
+        <div class="cat-card">
+          <div class="hd">
+            <div class="dot-9" style="border-radius:50%; background:{{ c.color }};"></div>
+            <div class="nm">{{ c.name }}</div>
+            {% if outlook_numbering %}
+              <span style="font-size:12px; color:var(--muted-3);" title="{{ _('Onder deze naam staat de categorie in Outlook') }}">{{ _('in Outlook:') }} <code>{{ (c.position or 0) + 1 }}. {{ c.name }}</code></span>
+            {% endif %}
+            <span style="font-size:12px; color:var(--muted-3);">{% trans count=counts.get(c.id, 0) %}{{ count }} mails{% endtrans %}</span>
+            <button class="btn btn-secondary btn-sm" data-cat-edit data-payload='{{ c.to_modal_dict()|tojson }}'>{{ _('Bewerken') }}</button>
+          </div>
+          <div class="cat-ai"><span class="lab">{{ _('AI-instructie:') }}</span> {{ c.ai }}</div>
+          {% if c.subcategories %}
+            <div style="margin-top:12px; padding-left:23px; display:flex; flex-wrap:wrap; gap:7px;">
+              {% for sb in c.subcategories %}
+                <span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-2); background:var(--bg); border:1px solid var(--border); padding:5px 10px; border-radius:8px;"><span class="dot" style="width:6px; height:6px; background:{{ c.color }};"></span>{{ sb.name }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

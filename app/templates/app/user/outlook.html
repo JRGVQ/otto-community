@@ -1,0 +1,102 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Outlook-weergave') }} — Otto{% endblock %}
+{% block screen %}
+<div class="ol-wrap">
+  <div class="ol-banner">
+    <div class="ico">O</div>
+    <div class="tx"><strong style="color:var(--outlook);">{{ _('Zo ziet het eruit in je Outlook-postvak.') }}</strong> {{ _('Otto-categorieën worden Outlook-categorieën en elk concept staat klaar in je') }} <strong style="color:var(--outlook);">{{ _('Concepten-map') }}</strong> {{ _('— klaar om te verzenden.') }}</div>
+  </div>
+  <div class="ol-cols">
+
+    {# Folders + Otto categories #}
+    <div class="ol-folders">
+      {% include "app/user/_inbox_viewswitch.html" %}
+      <div style="font-size:12px; font-weight:800; color:var(--text); padding:0 8px 8px;">{{ me.email }}</div>
+      <div style="display:flex; flex-direction:column; gap:1px;">
+        {% for f in ol_folders %}
+          <a class="ol-folder {{ 'active' if f.active }}" href="{{ url_for('web.outlook', folder=f.key) }}">
+            <span>{{ f.name }}</span>
+            {% if f.count %}<span class="ct">{{ f.count }}</span>{% endif %}
+          </a>
+        {% endfor %}
+      </div>
+      <div class="ol-section">{{ _('Otto-categorieën') }}</div>
+      <div style="display:flex; flex-direction:column; gap:1px;">
+        {% for c in ol_cats %}
+          <a class="ol-folder {{ 'active' if c.active }}" href="{{ url_for('web.outlook', folder=c.key) }}">
+            <span class="dot-sq" style="background:{{ c.color }};"></span>
+            <span style="flex:1;">{{ c.name }}</span>
+            <span style="font-size:11px; color:#9AA4B2;">{{ c.count }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Message list #}
+    <div class="ol-list">
+      <div class="ol-list-head">{{ ol_folder_name }}</div>
+      {% for m in ol_list %}
+        {% set cat = m.category %}
+        <a class="ol-row {{ 'active' if ol_selected and ol_selected.id == m.id }}" href="{{ url_for('web.outlook', folder=folder, m=m.id) }}">
+          <div style="display:flex; gap:10px;">
+            <div class="ol-bar" style="background:{{ cat.color if cat else '#9AA4B2' }};"></div>
+            <div class="min0" style="flex:1;">
+              <div style="display:flex; align-items:baseline; gap:8px;">
+                <span class="nowrap" style="font-size:13px; font-weight:700;">{{ m.sender }}</span>
+                <span style="flex:1;"></span>
+                <span style="font-size:11px; color:var(--muted-2);">{{ (m.received_at or m.created_at)|reltime(m.time_display) }}</span>
+              </div>
+              <div class="nowrap" style="font-size:12.5px; font-weight:600; color:var(--body-text-2); margin:1px 0;">{{ m.subject }}</div>
+              <div style="display:flex; gap:6px; align-items:center;">
+                {% if cat %}<span style="font-size:10.5px; font-weight:700; color:#fff; background:{{ cat.color }}; padding:2px 7px; border-radius:5px;">{{ cat.name }}</span>{% endif %}
+                {% if m.has_concept_draft %}<span style="font-size:10.5px; font-weight:700; color:var(--outlook); background:var(--outlook-bg); padding:2px 7px; border-radius:5px;">✎ {{ _('Concept') }}</span>{% endif %}
+              </div>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+    {# Reading + add-in #}
+    <div class="ol-read">
+      {% if ol_selected %}
+        {% set m = ol_selected %}
+        {% set cat = m.category %}
+        <div style="max-width:720px;" class="fade">
+          <div style="background:var(--surface); border:1px solid var(--border-2); border-radius:12px; padding:20px 22px;">
+            <div style="font-size:19px; font-weight:800; letter-spacing:-.01em; margin-bottom:10px;">{{ m.subject }}</div>
+            <div style="display:flex; align-items:center; gap:10px; padding-bottom:14px; border-bottom:1px solid var(--divider-2); margin-bottom:14px;">
+              <div style="font-size:13.5px; font-weight:700;">{{ m.sender }}</div>
+              <div style="font-size:12.5px; color:var(--muted);">{{ m.sender_email }}</div>
+              <span style="flex:1;"></span>
+              {% if cat %}<span style="font-size:11px; font-weight:700; color:#fff; background:{{ cat.color }}; padding:3px 9px; border-radius:6px;">{{ cat.name }}</span>{% endif %}
+            </div>
+            <div style="white-space:pre-wrap; font-size:14px; line-height:1.65; color:var(--body-text-3);">{{ m.body|mailtext }}</div>
+          </div>
+
+          {% if m.draft and m.draft.placed and m.draft.status == 'concept' %}
+            <div class="ol-addin">
+              <div class="ol-addin-head">
+                <div style="width:22px; height:22px; border-radius:6px; background:var(--outlook); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:11px;">O</div>
+                <div style="font-size:13.5px; font-weight:800; color:var(--outlook); flex:1;">Otto · {{ _('invoegtoepassing') }}</div>
+                <span class="pill pill-success">✓ {{ _('Klaargezet in Concepten') }}</span>
+              </div>
+              <div style="padding:16px 18px;">
+                <div style="font-size:12.5px; color:var(--text-2); margin-bottom:9px;">{{ _('Dit concept staat als draft in je Concepten-map. Open het in Outlook, lees het na en verzend zelf.') }}</div>
+                <div style="white-space:pre-wrap; font-size:13.5px; line-height:1.6; color:var(--body-text-3); background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:13px 14px;">{{ m.draft.current_text }}</div>
+              </div>
+            </div>
+          {% elif m.draft and m.draft.status == 'verzonden' %}
+            <div style="margin-top:16px; background:var(--success-bg); border:1px solid var(--success-border); border-radius:12px; padding:16px 18px; font-size:13.5px; font-weight:700; color:var(--success-text);">✓ {{ _('Door jou verzonden — staat in je Verzonden-map.') }}</div>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="empty-state" style="color:var(--muted);">
+          <div style="font-size:14px; font-weight:700;">{{ _('Kies een bericht') }}</div>
+          <div style="font-size:12.5px; margin-top:3px;">{{ _('Open de Concepten-map om alles te zien wat Otto klaarzette.') }}</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "owner/layout.html" %}
+{% block title %}{{ _('Platform — Gebeurtenissen') }}{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:1100px;">
+    <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ _('Gebeurtenissen') }}</div>
+    <div class="page-sub">{{ _('De zakelijke tijdlijn van elke omgeving: aanmeldingen, toegang, teamleden, koppelingen en beveiliging. Bewust géén mailboxinhoud — daar komt ook de eigenaar niet bij.') }}</div>
+
+    <div style="display:flex; gap:8px; margin:16px 0 14px; flex-wrap:wrap; align-items:center;">
+      <a class="tone {{ 'active' if not group }}" style="padding:7px 14px; border-radius:9px;" href="{{ url_for('owner.events', org=org_id) }}">{{ _('Alles') }}</a>
+      {% for key, label in groups %}
+        <a class="tone {{ 'active' if group==key }}" style="padding:7px 14px; border-radius:9px;" href="{{ url_for('owner.events', group=key, org=org_id) }}">{{ _(label) }}</a>
+      {% endfor %}
+      <form method="get" action="{{ url_for('owner.events') }}" style="margin-left:auto; display:flex; gap:6px;">
+        {% if group %}<input type="hidden" name="group" value="{{ group }}">{% endif %}
+        <select name="org" class="input" style="height:36px; width:210px;" data-submit-on-change>
+          <option value="">{{ _('Alle omgevingen') }}</option>
+          {% for o in orgs %}
+            <option value="{{ o.id }}" {{ 'selected' if org_id==o.id }}>{{ o.name }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button class="btn btn-ghost btn-sm">{{ _('Filter') }}</button></noscript>
+      </form>
+    </div>
+
+    {% if not rows %}
+      <div class="card card-18" style="padding:40px; text-align:center; color:var(--muted);">
+        <div style="font-size:32px; margin-bottom:8px;">🗓️</div>
+        <div style="font-size:15px; font-weight:700; color:var(--text-2);">{{ _('Nog geen gebeurtenissen') }}</div>
+        <div style="font-size:13px; margin-top:3px;">{{ _('Zodra er bedrijven bijkomen, toegang wijzigt of mailboxen koppelen, verschijnt dat hier.') }}</div>
+      </div>
+    {% else %}
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+          <thead>
+            <tr style="text-align:left; color:var(--muted); background:var(--surface-3);">
+              <th style="padding:9px 12px; font-weight:700;">{{ _('Tijd') }}</th>
+              <th style="padding:9px 8px; font-weight:700;">{{ _('Omgeving') }}</th>
+              <th style="padding:9px 8px; font-weight:700;">{{ _('Gebeurtenis') }}</th>
+              <th style="padding:9px 8px; font-weight:700;">{{ _('Detail') }}</th>
+              <th style="padding:9px 12px; font-weight:700;">{{ _('Door') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr style="border-top:1px solid var(--border);">
+                <td style="padding:8px 12px; color:var(--muted-2); white-space:nowrap;">{{ r.occurred_at.strftime('%d/%m %H:%M') if r.occurred_at }}</td>
+                <td style="padding:8px 8px;">
+                  {% if r.organization %}
+                    <a href="{{ url_for('owner.company_detail', org_id=r.organization_id) }}" style="color:var(--text); font-weight:600;">{{ r.organization.name }}</a>
+                  {% else %}—{% endif %}
+                </td>
+                <td style="padding:8px 8px; font-weight:700; color:var(--text-2);">{{ _(label_for(r.event)) }}</td>
+                <td style="padding:8px 8px; color:var(--muted); max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ r.detail or '' }}">{{ r.detail or '—' }}</td>
+                <td style="padding:8px 12px; color:var(--muted);">{{ r.actor or '—' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

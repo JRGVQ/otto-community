@@ -1,0 +1,16 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Analyse') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Analyse') }}</h1>
+<div class="sub">{{ _('Een overzicht van wat voor mail je krijgt en hoe ze verdeeld is.') }}</div>
+
+<h2>{{ _('Wat je ziet') }}</h2>
+<ul>
+  <li><strong>{{ _('Totalen') }}</strong> {{ _('— aantal mails, ongelezen, concepten klaar en verzonden.') }}</li>
+  <li><strong>{{ _('Per categorie') }}</strong> {{ _('— een verdeling met balken per categorie en percentages.') }}</li>
+  <li><strong>{{ _('Meest voorkomende afzenders') }}</strong> {{ _('— van welke domeinen je het meeste mail krijgt.') }}</li>
+</ul>
+<p>{{ _('Zo zie je in één oogopslag waar je tijd naartoe gaat en welke categorieën je inbox domineren. Open') }} <strong>{{ _('Analyse') }}</strong> {{ _('in de zijbalk.') }}</p>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('instellingen') }}">{{ _('Volgende: Profiel & instellingen') }} →</a></p>
+{% endblock %}

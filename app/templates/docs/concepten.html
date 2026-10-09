@@ -1,0 +1,20 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Concepten & antwoorden') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Concepten & antwoorden') }}</h1>
+<div class="sub">{{ _('Otto schrijft een concept in jouw stijl. Verzenden doe jij — altijd.') }}</div>
+
+<h2>{{ _('Eén concept, jouw toon') }}</h2>
+<p>{{ _('Voor categorieën die dat aankunnen zet Otto één concept klaar in je voorkeurstoon. Wissel met één klik naar') }} <strong>{{ _('Neutraal') }}</strong>, <strong>{{ _('Formeel') }}</strong>, <strong>{{ _('Kort') }}</strong> {{ _('of') }} <strong>{{ _('Vriendelijk') }}</strong>; {{ _('pas de tekst gerust aan voor je verzendt.') }}</p>
+
+<h2>Verdana Pro</h2>
+<p>{{ _('Concepten worden klaargezet in') }} <strong>Verdana Pro</strong>, {{ _('zodat ze er meteen verzorgd uitzien in Outlook.') }}</p>
+
+<h2>{{ _('Nooit dubbel antwoorden') }}</h2>
+<p>{{ _('Heb je in een gesprek al een antwoord verstuurd, dan maakt Otto geen nieuw concept meer voor datzelfde gesprek. Wil je toch antwoorden, gebruik dan') }} <strong>{{ _('Concept opstellen') }}</strong>.</p>
+
+<h2>{{ _('Otto verzendt nooit zelf') }}</h2>
+<p>{{ _('Er bestaat geen automatische verzending. Een concept blijft een concept tot jij op') }} <strong>{{ _('Verzenden') }}</strong> {{ _('klikt.') }}</p>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('mappen') }}">{{ _('Volgende: Automatisch mappen') }} →</a></p>
+{% endblock %}

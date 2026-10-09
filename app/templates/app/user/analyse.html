@@ -1,0 +1,50 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Analyse') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:860px;">
+    <div style="display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap;">
+      <div style="flex:1; min-width:200px;">
+        <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ _('Analyse') }}</div>
+        <div class="page-sub">{{ _('Welke mail je krijgt, wat Otto ermee deed en waar je tijd naartoe gaat.') }}</div>
+      </div>
+      <div style="display:flex; gap:6px; padding-bottom:6px;">
+        {% for p in periods %}
+          <a href="{{ url_for('web.analyse', p=p.key) }}"
+             style="font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px; text-decoration:none;
+                    {% if p.key == period.key %}background:var(--accent); color:#fff;{% else %}background:var(--surface-2); color:var(--muted);{% endif %}">{{ p.label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px; margin-top:14px;">
+      {% for w in widgets %}
+        <div class="card an-widget" data-widget="{{ w.key }}" style="padding:20px;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:14px;">
+            <div style="font-size:15px; font-weight:800; flex:1;">{{ w.title }}</div>
+            <button class="an-ctl" data-action="widget-up" title="{{ _('Omhoog') }}" aria-label="{{ _('Widget omhoog') }}">↑</button>
+            <button class="an-ctl" data-action="widget-down" title="{{ _('Omlaag') }}" aria-label="{{ _('Widget omlaag') }}">↓</button>
+            <button class="an-ctl" data-action="widget-hide" title="{{ _('Verbergen') }}" aria-label="{{ _('Widget verbergen') }}">×</button>
+          </div>
+          {% include w.template %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if hidden_widgets %}
+      <div style="margin-top:18px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span style="font-size:12px; color:var(--muted-3);">{{ _('Verborgen:') }}</span>
+        {% for h in hidden_widgets %}
+          <button class="an-chip" data-action="widget-show" data-widget="{{ h.key }}">+ {{ h.title }}</button>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+<style>
+  .an-ctl { width:26px; height:26px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-size:13px; cursor:pointer; line-height:1; }
+  .an-ctl:hover { color: var(--text); border-color: var(--muted-3); }
+  .an-chip { font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px; border:1px dashed var(--border); background:var(--surface); color:var(--muted); cursor:pointer; }
+  .an-chip:hover { color: var(--accent); border-color: var(--accent); }
+</style>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Aanmelden & beveiliging') }} — {{ _('Beheer') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:760px;">
+    <div class="page-h">{{ _('Aanmelden & beveiliging') }}</div>
+    <div class="page-sub">{{ _('Eén bedrijfslogin via je identity provider. Gebruikers melden zich aan met hun bestaande bedrijfsaccount.') }}</div>
+
+    <div class="card card-18" style="padding:22px;">
+      <div style="display:flex; align-items:center; gap:14px; padding-bottom:18px; border-bottom:1px solid var(--divider); margin-bottom:18px;">
+        <div style="width:42px; height:42px; border-radius:11px; background:var(--outlook); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800;">E</div>
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:800;">{{ _('Single sign-on (SSO)') }}</div>
+          <div style="font-size:12.5px; color:var(--muted);">{% trans idp=sso.idp %}Aangesloten op {{ idp }}{% endtrans %}</div>
+        </div>
+        <div class="toggle {{ 'on' if sso.enabled }}" data-action="toggle-sso" data-key="enabled"><div class="knob"></div></div>
+      </div>
+
+      <div class="label" style="margin-bottom:8px;">{{ _('Protocol') }}</div>
+      <div style="display:flex; gap:8px; margin-bottom:18px;">
+        {% for mth in ['SAML 2.0', 'OpenID Connect'] %}
+          <div class="tone {{ 'active' if sso.method == mth }}" style="padding:9px 16px; border-radius:10px; font-size:13px;" data-action="sso-method" data-method="{{ mth }}">{{ mth }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="label" style="margin-bottom:7px;">{{ _('Geverifieerd domein') }}</div>
+      <div style="display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--bg); border-radius:10px; margin-bottom:16px;">
+        <span style="font-size:14px; font-weight:700;">{{ sso.domain }}</span>
+        <span class="pill pill-success">✓ {{ _('Geverifieerd') }}</span>
+      </div>
+
+      <div class="label" style="margin-bottom:7px;">{{ _('SAML metadata-URL (IdP)') }}</div>
+      <input class="input" style="font-size:12.5px; color:var(--text-2); height:38px; margin-bottom:18px;" value="https://login.microsoftonline.com/acme/saml/metadata" />
+
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        {% set rows = [('enforce', _('SSO afdwingen'), _('Verplicht alle gebruikers van dit domein om via SSO aan te melden.')),
+                       ('mfa', _('MFA verplicht'), _('Tweestapsverificatie via de IdP afdwingen.')),
+                       ('jit', _('Just-in-time provisioning'), _('Maak automatisch een account aan bij eerste aanmelding.'))] %}
+        {% for key, lbl, desc in rows %}
+          <div style="display:flex; align-items:center; gap:14px; padding:13px 0; border-top:1px solid var(--divider);">
+            <div style="flex:1;"><div style="font-size:13.5px; font-weight:700;">{{ lbl }}</div><div style="font-size:12px; color:var(--muted);">{{ desc }}</div></div>
+            <div class="toggle {{ 'on' if sso[key] }}" data-action="toggle-sso" data-key="{{ key }}"><div class="knob"></div></div>
+          </div>
+        {% endfor %}
+      </div>
+      <button class="btn btn-secondary" style="margin-top:16px;" data-action="test" data-label="SSO (Entra ID)">{{ _('Verbinding testen') }}</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

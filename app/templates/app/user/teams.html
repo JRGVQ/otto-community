@@ -1,0 +1,60 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Teams') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="teams-wrap">
+    <div class="teams-head">
+      <div class="h">{{ _('Teams') }}</div>
+      <a class="btn btn-secondary" href="{{ url_for('web.integrations') }}">{{ _('+ Gedeeld postvak koppelen') }}</a>
+    </div>
+    <div class="page-sub">{{ _('Gedeelde postvakken waar jij aan meewerkt. Stel per postvak een eigen stem, handtekening en gedrag in — en beheer wie toegang heeft.') }}</div>
+
+    {% if mailboxes %}
+      <div class="mailbox-grid">
+        {% for mb in mailboxes %}
+          <a class="mailbox-card" href="{{ url_for('web.team_inbox', account_id=mb.id) }}">
+            <div class="mc-top">
+              <div class="mc-avatar" style="background:{{ mb.color }};">{{ mb.name[:1]|upper }}</div>
+              <div style="flex:1; min-width:0;">
+                <div class="mc-name">{{ mb.name }}</div>
+                <div class="mc-addr">{{ mb.address }}</div>
+              </div>
+              {% if mb.auto_draft %}<span class="pill pill-concept" style="font-size:10.5px;">{{ _('Auto-concept') }}</span>{% endif %}
+            </div>
+
+            {% if mb.description %}<div class="mc-desc">{{ mb.description }}</div>{% endif %}
+
+            <div class="mc-stats">
+              <div class="mc-stat"><div class="v" style="color:var(--accent);">{{ mb.draft_count }}</div><div class="l">{{ _('concepten') }}</div></div>
+              <div class="mc-stat"><div class="v">{{ mb.unread_count }}</div><div class="l">{{ _('ongelezen') }}</div></div>
+              <div class="mc-stat"><div class="v">{{ mb.member_count }}</div><div class="l">{{ _('lid') if mb.member_count == 1 else _('leden') }}</div></div>
+            </div>
+
+            <div class="mc-foot">
+              <div class="mc-avatars">
+                {% for a in mb.avatars[:5] %}
+                  <span class="a" style="background:{{ a.color }};">{{ a.initials }}</span>
+                {% endfor %}
+                {% if mb.member_count > 5 %}<span class="a" style="background:var(--muted-3);">+{{ mb.member_count - 5 }}</span>{% endif %}
+              </div>
+              <span class="mc-role">{{ mb.my_role }}</span>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card" style="padding:28px; text-align:center; margin-top:18px;">
+        <div style="font-size:15px; font-weight:800; margin-bottom:6px;">{{ _('Nog geen gedeelde postvakken') }}</div>
+        <div style="font-size:13px; color:var(--muted); line-height:1.5; max-width:460px; margin:0 auto 16px;">
+          {% if can_add_shared %}
+            {{ _('Koppel een gedeeld postvak (bv. support@ of info@) waartoe jij toegang hebt. Alleen leden zien de mail.') }}
+          {% else %}
+            {{ _('Koppel eerst je eigen Microsoft 365-postvak. Daarna kan je gedeelde postvakken zoals support@ of info@ toevoegen.') }}
+          {% endif %}
+        </div>
+        <a class="btn btn-primary" href="{{ url_for('web.integrations') }}">{{ _('Naar koppelingen') }}</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

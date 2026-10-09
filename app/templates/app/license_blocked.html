@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Omgeving niet actief') }} — Otto{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="logo-badge"><div class="core"></div></div>
+      <div class="name">Otto</div>
+    </div>
+    <div class="auth-box" style="text-align:center;">
+      <div style="width:52px; height:52px; border-radius:14px; background:var(--danger-bg); color:var(--danger); display:inline-flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; margin-bottom:16px;">{{ '⧗' if archived else '!' }}</div>
+      {% if archived %}
+      <div style="font-size:20px; font-weight:800; letter-spacing:-.01em; margin-bottom:6px;">{{ _('Je omgeving is gearchiveerd') }}</div>
+      <div style="font-size:14px; color:var(--text-2); line-height:1.6; margin-bottom:20px;">
+        {{ _('De omgeving') }} <strong>{{ me.organization.name }}</strong> {{ _('staat in de prullenbak. Je gegevens zijn nog bewaard en kunnen worden hersteld door de beheerder van deze Otto-installatie.') }}
+      </div>
+      {% else %}
+      <div style="font-size:20px; font-weight:800; letter-spacing:-.01em; margin-bottom:6px;">{{ _('Je omgeving is uitgeschakeld') }}</div>
+      <div style="font-size:14px; color:var(--text-2); line-height:1.6; margin-bottom:20px;">
+        {{ _('De toegang tot Otto voor') }} <strong>{{ me.organization.name }}</strong> {{ _('is uitgeschakeld door de beheerder van deze Otto-installatie. Je gegevens blijven bewaard.') }}
+      </div>
+      {% endif %}
+      <div style="font-size:13.5px; color:var(--text-2); background:var(--surface-2, #f6f5fa); border-radius:10px; padding:12px 14px; margin-bottom:18px; line-height:1.55;">
+        {{ _('Neem contact op met de beheerder van deze installatie om de omgeving weer te activeren.') }}
+      </div>
+      <div style="margin-top:16px;"><a href="{{ url_for('auth.logout') }}" style="font-size:13px; color:var(--muted);">{{ _('Afmelden') }}</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

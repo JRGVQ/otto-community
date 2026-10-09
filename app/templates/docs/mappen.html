@@ -1,0 +1,19 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Automatisch mappen') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Automatisch mappen') }}</h1>
+<div class="sub">{{ _('Otto analyseert je mappenindeling en stelt per mail de beste map voor — jij verplaatst met één klik.') }}</div>
+
+<h2>{{ _('Hoe het werkt') }}</h2>
+<p>{{ _('Otto leest de mappen van je gekoppelde postvak en matcht ze met de categorie (en subcategorie) van een mail. In het leespaneel verschijnt dan een voorstel:') }} <em>{{ _('"Otto stelt ‘Boekhouding’ voor"') }}</em>.</p>
+
+<h2>{{ _('Verplaatsen') }}</h2>
+<ol class="steps-num">
+  <li>{{ _('Open een mail; bij') }} <strong>{{ _('Verplaats naar map') }}</strong> {{ _("staat Otto's voorstel al geselecteerd.") }}</li>
+  <li>{{ _('Kies eventueel een andere map in de lijst.') }}</li>
+  <li>{{ _('Klik') }} <strong>{{ _('Verplaats') }}</strong> {{ _('— de mail gaat naar die map en verdwijnt uit je inbox.') }}</li>
+</ol>
+<div class="note">{{ _('De suggestie verschijnt zodra een mailbox met mappen gekoppeld is (Microsoft 365 of Gmail-labels).') }}</div>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('taken') }}">{{ _('Volgende: Taken') }} →</a></p>
+{% endblock %}

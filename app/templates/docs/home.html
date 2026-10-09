@@ -1,0 +1,25 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Documentatie') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Otto-documentatie') }}</h1>
+<div class="sub">{{ _('Alles om Otto in te stellen voor jouw bedrijf — van je eerste login tot je eigen mailbox-app en single sign-on.') }}</div>
+
+<h2>{{ _('Snel starten') }}</h2>
+<ul>
+  <li><a href="{{ docs_url('aan-de-slag') }}">{{ _('Aan de slag') }}</a> — {{ _('je account, je eerste aanmelding en je omgeving instellen.') }}</li>
+  <li><a href="{{ docs_url('mailbox') }}">{{ _('Mailbox koppelen') }}</a> — {{ _('verbind Microsoft 365 of Gmail via OAuth.') }}</li>
+</ul>
+
+<h2>{{ _('Geavanceerd') }}</h2>
+<ul>
+  <li><a href="{{ docs_url('eigen-app') }}">{{ _('Eigen app koppelen') }}</a> — {{ _('gebruik je eigen Microsoft/Google-app zodat de toestemming in jouw tenant blijft.') }}</li>
+  <li><a href="{{ docs_url('sso') }}">{{ _('Login-SSO (OIDC)') }}</a> — {{ _('laat je medewerkers inloggen via je bedrijfs-IdP.') }}</li>
+</ul>
+
+<h2>{{ _('Meer') }}</h2>
+<ul>
+  <li><a href="{{ docs_url('faq') }}">{{ _('Veelgestelde vragen') }}</a></li>
+</ul>
+
+<div class="note"><strong>{{ _('Otto verzendt nooit zelf.') }}</strong> {{ _('Hij maakt enkel concept-antwoorden — jij houdt altijd de controle en het laatste woord.') }}</div>
+{% endblock %}

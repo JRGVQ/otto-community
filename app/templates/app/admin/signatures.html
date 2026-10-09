@@ -1,0 +1,1030 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Handtekeningen') }} — {{ _('Beheer') }} — Otto{% endblock %}
+{% block screen %}
+<style nonce="{{ csp_nonce }}">
+  /* Handtekeningen — heldere flow: lijst + tabs + editor-weergave + sjabloonkiezer. */
+  .sig-tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin:20px 0 20px}
+  .sig-tab{appearance:none;background:none;border:none;font-family:inherit;font-size:14px;font-weight:600;
+    color:var(--text-2);padding:11px 15px;cursor:pointer;position:relative;border-radius:8px 8px 0 0}
+  .sig-tab:hover{color:var(--text)}
+  .sig-tab[aria-selected="true"]{color:var(--accent)}
+  .sig-tab[aria-selected="true"]::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;background:var(--accent);border-radius:2px}
+  .sig-tab .count{font-size:11px;font-weight:700;background:var(--purple-100);color:var(--accent);border-radius:999px;padding:1px 7px;margin-left:5px}
+
+  .sig-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);box-shadow:var(--shadow-card);
+    padding:18px;margin-bottom:14px;display:grid;grid-template-columns:280px 1fr auto;gap:22px;align-items:start}
+  .sig-card .sig-head{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px}
+  .sig-card .sig-head strong{font-size:15px;font-weight:700}
+  .sig-prev{border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden}
+  .sig-prev.empty{display:flex;align-items:center;justify-content:center;min-height:110px;color:var(--muted-3);font-size:12.5px;padding:12px;text-align:center}
+  .sig-col h4{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 9px}
+  .sig-col h4.mt{margin-top:15px}
+  .sig-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;color:var(--text-3)}
+  .sig-row:last-child{margin-bottom:0}
+  .sig-ic{width:20px;height:20px;border-radius:6px;background:var(--purple-100);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+  .sig-ic.ok{background:var(--success-bg);color:var(--success-text)}
+  .sig-ic.off{background:var(--surface-3);color:var(--danger)}
+  .sig-ic.grey{background:var(--surface-3);color:var(--muted)}
+  .sig-cardactions{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:150px}
+
+  #sig-listview[hidden],#sig-editorview[hidden]{display:none}
+  .ed-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  .ed-top .ed-name{font-size:22px;font-weight:800;letter-spacing:-.02em}
+
+  .sig-scrim{position:fixed;inset:0;background:rgba(30,22,55,.42);display:flex;align-items:flex-start;justify-content:center;
+    padding:40px 20px;z-index:60;overflow:auto}
+  .sig-scrim[hidden]{display:none}
+  .sig-modal{background:var(--surface);border-radius:20px;max-width:940px;width:100%;box-shadow:0 30px 80px rgba(20,14,45,.35);overflow:hidden}
+  .sig-modal-head{display:flex;align-items:center;padding:20px 26px;border-bottom:1px solid var(--divider)}
+  .sig-modal-head h2{font-size:20px;font-weight:800;margin:0}
+  .sig-modal-body{padding:22px 26px 30px;max-height:calc(100vh - 200px);overflow:auto}
+  .sig-kitbox{border:1px solid var(--border-purple);background:var(--purple-50);border-radius:14px;padding:18px;margin-bottom:22px}
+  .sig-kitgrid{display:grid;grid-template-columns:2fr 1fr auto;gap:14px;align-items:end}
+  .sig-tplgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .sig-tplcard{border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:.15s;background:var(--surface);text-align:left}
+  .sig-tplcard:hover{border-color:var(--accent);box-shadow:0 8px 24px rgba(108,76,230,.12);transform:translateY(-1px)}
+  .sig-tplcard .tp-name{font-size:13.5px;font-weight:700}
+  .sig-tplcard .tp-desc{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .sig-tplcard .tp-badge{float:right;font-size:10px}
+  .sig-etabs{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0 16px;border-bottom:1px solid var(--divider);padding-bottom:2px}
+  .etab{appearance:none;background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--text-2);
+    padding:8px 12px;cursor:pointer;border-radius:8px}
+  .etab:hover{color:var(--text);background:var(--surface-2)}
+  .etab[aria-selected="true"]{color:var(--accent);background:var(--purple-100)}
+  .etab-panel[hidden]{display:none}
+  .ed-toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-3)}
+  .scope-opt{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:8px;cursor:pointer}
+  .scope-opt:hover{border-color:var(--border-purple)}
+  @media(max-width:820px){.sig-card{grid-template-columns:1fr}.sig-kitgrid,.sig-tplgrid{grid-template-columns:1fr}}
+</style>
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:1080px;">
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['toast','info','error'] %}
+      <div class="alert alert-{{ 'error' if cat=='error' else 'info' }}">{{ m }}</div>
+    {% endfor %}
+
+    {# ══════════════════════════ LIJST-WEERGAVE ══════════════════════════ #}
+    <div id="sig-listview">
+      <div style="display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:280px;">
+          <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ _('Handtekeningen') }}</div>
+          <div class="page-sub" style="margin:6px 0 0; max-width:70ch;">
+            {{ _('Bouw centrale e-mailhandtekeningen en bepaal wie welke krijgt — per domein, gebruiker of Microsoft 365-groep. Otto zet ze server-side onder elk concept.') }}
+          </div>
+        </div>
+        {% if can_manage_signatures %}
+        <div style="display:flex; gap:10px; flex-wrap:wrap; padding-top:4px;">
+          {% if sig_import_available %}
+            <button class="btn btn-secondary" data-action="sig-goto-import">↧ {{ _('Importeren') }}</button>
+          {% endif %}
+          <button class="btn btn-primary" data-action="sig-new">+ {{ _('Maak handtekening aan') }}</button>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="sig-tabs" role="tablist">
+        <button class="sig-tab" role="tab" aria-selected="true" data-tab="tab-sigs">{{ _('Alle handtekeningen') }} <span class="count">{{ signatures|length }}</span></button>
+        {% if can_manage_campaigns or can_manage_signatures %}
+          <button class="sig-tab" role="tab" aria-selected="false" data-tab="tab-brand">{{ _('Merk & campagnes') }}</button>
+        {% endif %}
+        {% if can_manage_signatures or can_manage_cloud %}
+          <button class="sig-tab" role="tab" aria-selected="false" data-tab="tab-deliver">{{ _('Beveiliging & aflevering') }}</button>
+        {% endif %}
+      </div>
+
+      {# ─────────────── TAB: Alle handtekeningen ─────────────── #}
+      <section id="tab-sigs">
+        <div style="font-size:12.5px; color:var(--muted); margin:-4px 0 16px; line-height:1.5;">
+          {{ _('Handtekeningen worden getoond in de volgorde waarin ze worden geëvalueerd: een specifieke toewijzing (gebruiker of groep) wint van het domein, het domein wint van de organisatie-standaard.') }}
+        </div>
+
+        {% if sig_groups is none %}
+          <div class="card" style="padding:14px 18px; margin-bottom:16px; border-left:3px solid var(--accent);">
+            <div style="font-size:12.5px; color:var(--muted); line-height:1.5;">
+              🔒 {{ _('Toewijzen per Microsoft 365-groep vraagt eenmalige beheerderstoestemming (GroupMember.Read.All) én een gekoppeld Outlook-postvak. Vraag de consent aan via Beheer → E-mailkoppeling en herkoppel daarna je postvak; tot dan werk je met domeinen en gebruikers.') }}
+            </div>
+          </div>
+        {% endif %}
+
+        {% for sig in signatures %}
+          <article class="sig-card"
+               data-sig='{{ {"id": sig.id, "name": sig.name or "", "domain": sig.domain or "",
+                             "html": sig.html or "", "body": sig.body or "",
+                             "users": sig.assignments|selectattr("kind","equalto","user")|map(attribute="value")|list,
+                             "groups": sig.assignments|selectattr("kind","equalto","group")|map(attribute="value")|list,
+                             "enabled": sig.enabled, "recipient_scope": sig.recipient_scope or "all",
+                             "starts_at": sig.starts_at.strftime("%Y-%m-%dT%H:%M") if sig.starts_at else "",
+                             "ends_at": sig.ends_at.strftime("%Y-%m-%dT%H:%M") if sig.ends_at else "",
+                             "exclusions": sig.exclusions if sig.exclusions is mapping else {}}|tojson }}'>
+            <div class="sig-head">
+              <strong>{{ sig.name or sig.domain or _('Standaard') }}</strong>
+              {% if sig.is_default %}<span class="pill pill-concept">{{ _('Standaard') }}</span>{% endif %}
+              {% if sig.domain %}<span class="pill">@{{ sig.domain }}</span>{% endif %}
+            </div>
+            {% if sig_previews.get(sig.id) %}
+              <div class="sig-prev">
+                <iframe class="sig-preview-frame" sandbox="allow-same-origin" loading="lazy"
+                        title="{{ _('Voorbeeld') }}" srcdoc="{{ sig_previews.get(sig.id, '') }}"></iframe>
+              </div>
+            {% else %}
+              <div class="sig-prev empty">{{ _('Nog geen ontwerp') }}</div>
+            {% endif %}
+            <div class="sig-col">
+              <h4>{{ _('Verzenders') }}</h4>
+              {% if sig.assignments %}
+                {% for a in sig.assignments %}
+                  {% if a.kind == 'user' %}
+                    <div class="sig-row"><span class="sig-ic">👤</span> {{ sig_user_names.get(a.value, '#' ~ a.value) }}</div>
+                  {% else %}
+                    <div class="sig-row"><span class="sig-ic">👥</span> {{ a.label or a.value }}</div>
+                  {% endif %}
+                {% endfor %}
+              {% elif sig.domain %}
+                <div class="sig-row"><span class="sig-ic">🌐</span> {{ _('Iedereen op') }} @{{ sig.domain }}</div>
+              {% else %}
+                <div class="sig-row"><span class="sig-ic">🌐</span> {{ _('Iedereen') }}</div>
+              {% endif %}
+              <h4 class="mt">{{ _('Configuratie') }}</h4>
+              {% if not sig.enabled %}
+                <div class="sig-row"><span class="sig-ic off">✕</span> {{ _('Uitgeschakeld') }}</div>
+              {% elif sig.starts_at or sig.ends_at %}
+                <div class="sig-row"><span class="sig-ic">🗓</span> {{ _('Gepland') }}: {{ sig.starts_at.strftime('%d/%m/%y') if sig.starts_at else '…' }} – {{ sig.ends_at.strftime('%d/%m/%y') if sig.ends_at else '…' }}</div>
+              {% else %}
+                <div class="sig-row"><span class="sig-ic ok">✓</span> {{ _('Standaard') if sig.is_default else _('Actief') }}</div>
+              {% endif %}
+              {% if sig.recipient_scope == 'internal' %}<div class="sig-row"><span class="sig-ic">📥</span> {{ _('Alleen interne ontvangers') }}</div>
+              {% elif sig.recipient_scope == 'external' %}<div class="sig-row"><span class="sig-ic">📤</span> {{ _('Alleen externe ontvangers') }}</div>{% endif %}
+              <div class="sig-row"><span class="sig-ic grey">◧</span> {{ 'HTML' if sig.html else _('Alleen tekst') }}</div>
+            </div>
+            <div class="sig-cardactions">
+              {% if can_manage_signatures %}
+                <button class="btn btn-primary btn-sm" data-action="sig-edit">{{ _('Ontwerp bewerken') }}</button>
+                <button class="btn btn-secondary btn-sm" data-action="sig-goto-rules">{{ _('Regels beheren') }}</button>
+                <form method="post" action="{{ url_for('web.admin_signature_test', sig_id=sig.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-ghost btn-sm" style="width:100%;">{{ _('Stuur testmail') }}</button>
+                </form>
+                <form method="post" action="{{ url_for('web.admin_signature_delete', sig_id=sig.id) }}"
+                      data-confirm="{{ _('Deze handtekening verwijderen?') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-ghost btn-sm" style="width:100%; color:var(--danger);">{{ _('Verwijderen') }}</button>
+                </form>
+              {% endif %}
+            </div>
+          </article>
+        {% else %}
+          <div class="card" style="padding:26px; text-align:center;">
+            <div style="font-size:14px; font-weight:700; margin-bottom:4px;">{{ _('Nog geen handtekeningen') }}</div>
+            <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px;">{{ _('Begin met een sjabloon en pas hem aan je huisstijl aan.') }}</div>
+            {% if can_manage_signatures %}<button class="btn btn-primary" data-action="sig-new">+ {{ _('Maak handtekening aan') }}</button>{% endif %}
+          </div>
+        {% endfor %}
+
+        {# ── Regels (verzender/ontvanger-voorwaarden) ── #}
+        {% if can_manage_signatures %}
+        {% set field_labels = {
+            'sender_mailbox': _('Verzendend postvak'), 'sender_department': _('Afdeling verzender'),
+            'sender_group': _('M365-groep verzender'), 'recipient_domain': _('Domein ontvanger'),
+            'recipient_scope': _('Ontvanger intern/extern')} %}
+        {% set op_labels = {'equals': _('is gelijk aan'), 'contains': _('bevat'),
+            'in': _('is één van'), 'is': _('is')} %}
+        <div class="card" style="padding:18px; margin-top:8px;" id="sig-rules"
+             data-i18n-newrule="{{ _('Nieuwe regel') }}" data-i18n-editrule="{{ _('Regel bewerken') }}">
+          <div style="font-size:14px; font-weight:800; margin-bottom:4px;">{{ _('Regels') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); margin-bottom:12px;">
+            {{ _('Wijs een handtekening toe op basis van voorwaarden — bv. een Engelse handtekening voor externe ontvangers, of een aparte voor de sales-afdeling. Regels worden op prioriteit geëvalueerd (laag eerst); de eerste die past, wint. Zonder regels geldt het gewone: toewijzing → domein → standaard.') }}
+          </div>
+
+          {% for r in sig_rules %}
+            <div class="card" style="padding:12px 14px; margin-bottom:10px;">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span class="pill" title="{{ _('Prioriteit') }}">#{{ r.priority }}</span>
+                <strong style="font-size:13.5px;">{{ r.name or _('Regel') }}</strong>
+                {% if not r.enabled %}<span class="pill" style="color:var(--muted);">{{ _('uit') }}</span>{% endif %}
+                <span style="color:var(--muted); font-size:12.5px;">→ {{ r.signature.name or r.signature.domain or _('Standaard') }}</span>
+                <span style="flex:1;"></span>
+                <button class="btn btn-secondary btn-sm" data-action="sig-rule-edit" data-rule-id="{{ r.id }}">{{ _('Bewerken') }}</button>
+                <button class="btn btn-ghost btn-sm" form="del-rule-{{ r.id }}" style="color:var(--danger);">{{ _('Verwijderen') }}</button>
+              </div>
+              <div style="font-size:12px; color:var(--muted); margin-top:6px;">
+                {% for c in r.conditions %}
+                  <span class="pill" style="margin:2px 4px 2px 0;">{{ field_labels.get(c.field, c.field) }} {{ op_labels.get(c.op, c.op) }} <b>{{ c.value }}</b></span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+
+          <form method="post" action="{{ url_for('web.admin_signature_rule_save') }}" id="sig-rule-form" style="margin-top:6px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="rule_id" id="rule-id" value="">
+            <div style="font-size:13px; font-weight:700; margin-bottom:8px;" id="sig-rule-title">{{ _('Nieuwe regel') }}</div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+              <div style="flex:2; min-width:180px;">
+                <label class="lbl">{{ _('Naam') }}</label>
+                <input class="input" name="name" id="rule-name" placeholder="{{ _('bv. Extern — Engels') }}">
+              </div>
+              <div style="flex:1; min-width:100px;">
+                <label class="lbl">{{ _('Prioriteit') }}</label>
+                <input class="input" name="priority" id="rule-priority" type="number" value="100">
+              </div>
+              <div style="flex:2; min-width:200px;">
+                <label class="lbl">{{ _('Handtekening') }}</label>
+                <select class="input" name="signature_id" id="rule-signature">
+                  {% for s in signatures %}<option value="{{ s.id }}">{{ s.name or s.domain or _('Standaard') }}</option>{% endfor %}
+                </select>
+              </div>
+            </div>
+            <label class="lbl">{{ _('Voorwaarden') }} <span style="color:var(--muted); font-weight:400;">· {{ _('alle moeten kloppen') }}</span></label>
+            <div id="sig-rule-conds">
+              <div class="sig-cond-row" style="display:flex; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                <select class="input cond-field" name="cond_field" style="flex:2; min-width:150px;">
+                  <option value="">—</option>
+                  {% for f in rule_fields %}<option value="{{ f }}">{{ field_labels.get(f, f) }}</option>{% endfor %}
+                </select>
+                <select class="input cond-op" name="cond_op" style="flex:1; min-width:110px;">
+                  {% for o in rule_ops %}<option value="{{ o }}">{{ op_labels.get(o, o) }}</option>{% endfor %}
+                </select>
+                <input class="input cond-value" name="cond_value" style="flex:2; min-width:130px;" placeholder="{{ _('waarde (bv. external, sales, acme.be)') }}">
+                <button type="button" class="btn btn-ghost btn-sm cond-remove" style="color:var(--danger);">✕</button>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+              <button type="button" class="btn btn-ghost btn-sm" id="sig-cond-add">+ {{ _('Voorwaarde') }}</button>
+              <label style="display:flex; gap:6px; align-items:center; font-size:12.5px;">
+                <input type="checkbox" name="enabled" id="rule-enabled" checked> {{ _('Ingeschakeld') }}</label>
+              <span style="flex:1;"></span>
+              <button type="button" class="btn btn-ghost btn-sm" id="sig-rule-reset" hidden>{{ _('Annuleer bewerken') }}</button>
+              <button class="btn btn-secondary btn-sm">{{ _('Regel opslaan') }}</button>
+            </div>
+          </form>
+        </div>
+        {% for r in sig_rules %}
+          <form id="del-rule-{{ r.id }}" method="post" style="display:none;"
+                action="{{ url_for('web.admin_signature_rule_delete', rule_id=r.id) }}"
+                data-confirm="{{ _('Deze regel verwijderen?') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          </form>
+        {% endfor %}
+        {% endif %}
+      </section>
+
+      {# ─────────────── TAB: Merk & campagnes ─────────────── #}
+      {% if can_manage_campaigns or can_manage_signatures %}
+      <section id="tab-brand" hidden>
+        <div class="card" style="padding:14px 18px; margin-bottom:16px; border-left:3px solid var(--accent);">
+          <div style="font-size:12.5px; color:var(--muted); line-height:1.5;">
+            {{ _('Eén plek voor je merk en campagnes — logo, kleur en social-links (merkkits), promotiebanners, herbruikbare velden en ingebedde afbeeldingen. Deze voeden je handtekeningen automatisch via placeholders zoals {{logo}}, {{merk_kleur}} en {{social}}.') }}
+          </div>
+        </div>
+
+        {% if can_manage_campaigns %}
+        {# ── Brand kits (centrale huisstijl per organisatie/domein) ── #}
+        <div class="card" style="padding:18px; margin-bottom:16px;" id="sig-brandkits"
+             data-i18n-newbrand="{{ _('Nieuwe brand kit') }}" data-i18n-editbrand="{{ _('Brand kit bewerken') }}">
+          <div style="font-size:14px; font-weight:800; margin-bottom:4px;">{{ _('Merkkits') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); margin-bottom:12px;">
+            {{ _('Eén centrale huisstijl (logo + accentkleur + social-links) per organisatie of per verzenddomein — handig voor een tenant met meerdere merken. Sjablonen nemen het logo over via de {{logo}}-placeholder; wijzig het logo op één plek en alle handtekeningen van dat domein volgen.') }}
+          </div>
+          {% for k in sig_brand_kits %}
+            <div class="card" style="padding:10px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              {% if k.logo_url %}<img src="{{ k.logo_url }}" alt="" style="max-height:28px; max-width:100px;">{% endif %}
+              <strong style="font-size:13px;">{{ k.name or k.domain or _('Standaard') }}</strong>
+              {% if k.domain %}<span class="pill">@{{ k.domain }}</span>{% else %}<span class="pill pill-concept">{{ _('Standaard') }}</span>{% endif %}
+              {% if k.accent_color %}<span title="{{ k.accent_color }}" style="width:16px; height:16px; border-radius:4px; display:inline-block; background:{{ k.accent_color }}; border:1px solid var(--border);"></span>{% endif %}
+              <span style="flex:1;"></span>
+              <button class="btn btn-secondary btn-sm" data-action="sig-brand-edit" data-brand-id="{{ k.id }}">{{ _('Bewerken') }}</button>
+              <button class="btn btn-ghost btn-sm" form="del-brand-{{ k.id }}" style="color:var(--danger);">✕</button>
+            </div>
+          {% endfor %}
+          <form method="post" action="{{ url_for('web.admin_signature_brand_save') }}" id="sig-brand-form" style="margin-top:6px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="brand_id" id="brand-id" value="">
+            <div style="font-size:13px; font-weight:700; margin-bottom:8px;" id="sig-brand-title">{{ _('Nieuwe brand kit') }}</div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+              <div style="flex:1; min-width:150px;"><label class="lbl">{{ _('Naam') }}</label>
+                <input class="input" name="name" id="brand-name" placeholder="{{ _('bv. Merk A') }}"></div>
+              <div style="flex:1; min-width:150px;"><label class="lbl">{{ _('Verzenddomein') }} <span style="color:var(--muted); font-weight:400;">· {{ _('leeg = standaard') }}</span></label>
+                <input class="input" name="domain" id="brand-domain" placeholder="merk-a.be"></div>
+              <div style="flex:1; min-width:110px;"><label class="lbl">{{ _('Accentkleur') }}</label>
+                <input class="input" name="accent_color" id="brand-color" type="color" value="#6C4CE6" style="padding:4px; height:38px;"></div>
+            </div>
+            <label class="lbl">{{ _('Logo-URL') }} <span style="color:var(--muted); font-weight:400;">· {{ _('https of een geüploade afbeelding (/media/sig-asset/…)') }}</span></label>
+            <input class="input" name="logo_url" id="brand-logo" placeholder="https://merk-a.be/logo.png">
+            <label class="lbl" style="margin-top:10px;">{{ _('Social-profielen') }} <span style="color:var(--muted); font-weight:400;">· {{ _('links naar je profielen; verschijnen via de {{social}}-placeholder in de accentkleur') }}</span></label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <input class="input" name="social_linkedin" id="brand-social-linkedin" placeholder="LinkedIn — https://linkedin.com/company/…">
+              <input class="input" name="social_x" id="brand-social-x" placeholder="X — https://x.com/…">
+              <input class="input" name="social_facebook" id="brand-social-facebook" placeholder="Facebook — https://facebook.com/…">
+              <input class="input" name="social_instagram" id="brand-social-instagram" placeholder="Instagram — https://instagram.com/…">
+              <input class="input" name="social_youtube" id="brand-social-youtube" placeholder="YouTube — https://youtube.com/@…">
+            </div>
+            <p style="color:var(--muted); font-size:12px; margin:6px 0 0;">{{ _('Tip: live “laatste post”-feeds (zoals sommige tools tonen) vereisen API-sleutels van LinkedIn/Facebook. Otto toont hier profiel-links, wat in élke mailclient betrouwbaar werkt.') }}</p>
+            <div style="display:flex; gap:8px; align-items:center; margin-top:10px;">
+              <span style="flex:1;"></span>
+              <button type="button" class="btn btn-ghost btn-sm" id="sig-brand-reset" hidden>{{ _('Annuleer bewerken') }}</button>
+              <button class="btn btn-secondary btn-sm">{{ _('Brand kit opslaan') }}</button>
+            </div>
+          </form>
+        </div>
+        {% for k in sig_brand_kits %}
+          <form id="del-brand-{{ k.id }}" method="post" style="display:none;"
+                action="{{ url_for('web.admin_signature_brand_delete', brand_id=k.id) }}"
+                data-confirm="{{ _('Deze brand kit verwijderen?') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          </form>
+        {% endfor %}
+        <script type="application/json" id="sig-brandkits-data" nonce="{{ csp_nonce }}">{{ sig_brand_kits_data|tojson }}</script>
+
+        {# ── Banners (boven/onder de handtekening; eventueel gepland) ── #}
+        <div class="card" style="padding:18px; margin-bottom:16px;" id="sig-banners"
+             data-i18n-newbanner="{{ _('Nieuwe banner') }}" data-i18n-editbanner="{{ _('Banner bewerken') }}">
+          <div style="font-size:14px; font-weight:800; margin-bottom:4px;">{{ _('Banners') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); margin-bottom:12px;">
+            {{ _('Zet een banner boven of onder elke HTML-handtekening — bv. een campagne of een kerstbanner die vanzelf stopt. Gebruik een https-afbeelding, of plak de URL van een geüploade afbeelding hierboven (dan wordt ze als bijlage ingebed). Bij meerdere actieve banners wint de hoogste weging.') }}
+          </div>
+          {% for b in sig_banners %}
+            <div class="card" style="padding:10px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <img src="{{ b.image_url }}" alt="" style="max-height:32px; max-width:120px; border-radius:4px;">
+              <strong style="font-size:13px;">{{ b.name or _('Banner') }}</strong>
+              <span class="pill">{{ _('boven') if b.placement=='above' else _('onder') }}</span>
+              {% if b.scope_kind and b.scope_kind != 'org' %}<span class="pill" style="color:#5B5FC7; background:var(--purple-100);">🎯 {{ b.scope_kind }}: {{ b.scope_value }}</span>{% endif %}
+              {% if b.track %}
+                {% set st = sig_banner_stats.get(b.id, {'impressions': 0, 'clicks': 0}) %}
+                <span class="pill" title="{{ _('Weergaven · clicks · doorklikratio') }}">📊 {{ st.impressions }} · {{ st.clicks }}{% if st.impressions %} · {{ (100 * st.clicks / st.impressions)|round(1) }}%{% endif %}</span>
+              {% endif %}
+              {% if not b.enabled %}<span class="pill" style="color:var(--muted);">{{ _('uit') }}</span>{% endif %}
+              {% if b.starts_at or b.ends_at %}<span style="font-size:11.5px; color:var(--muted);">{{ b.starts_at.strftime('%d/%m') if b.starts_at else '…' }} – {{ b.ends_at.strftime('%d/%m') if b.ends_at else '…' }}</span>{% endif %}
+              <span style="flex:1;"></span>
+              <button class="btn btn-secondary btn-sm" data-action="sig-banner-edit" data-banner-id="{{ b.id }}">{{ _('Bewerken') }}</button>
+              <button class="btn btn-ghost btn-sm" form="del-banner-{{ b.id }}" style="color:var(--danger);">✕</button>
+            </div>
+          {% endfor %}
+          <form method="post" action="{{ url_for('web.admin_signature_banner_save') }}" id="sig-banner-form" style="margin-top:6px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="banner_id" id="banner-id" value="">
+            <div style="font-size:13px; font-weight:700; margin-bottom:8px;" id="sig-banner-title">{{ _('Nieuwe banner') }}</div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+              <div style="flex:1; min-width:150px;"><label class="lbl">{{ _('Naam') }}</label>
+                <input class="input" name="name" id="banner-name" placeholder="{{ _('bv. Kerst 2026') }}"></div>
+              <div style="flex:2; min-width:220px;"><label class="lbl">{{ _('Afbeeldings-URL') }}</label>
+                <input class="input" name="image_url" id="banner-image" required placeholder="https://…/banner.png"></div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+              <div style="flex:2; min-width:200px;"><label class="lbl">{{ _('Link-URL') }} <span style="color:var(--muted); font-weight:400;">· {{ _('optioneel') }}</span></label>
+                <input class="input" name="link_url" id="banner-link" placeholder="https://www.acme.be"></div>
+              <div style="flex:1; min-width:120px;"><label class="lbl">{{ _('Positie') }}</label>
+                <select class="input" name="placement" id="banner-placement">
+                  <option value="below">{{ _('Onder') }}</option><option value="above">{{ _('Boven') }}</option></select></div>
+              <div style="flex:1; min-width:90px;"><label class="lbl">{{ _('Weging') }}</label>
+                <input class="input" name="weight" id="banner-weight" type="number" value="0"></div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+              <div style="flex:1; min-width:200px;"><label class="lbl">{{ _('Van') }} <span style="color:var(--muted); font-weight:400;">· {{ _('optioneel') }}</span></label>
+                <input class="input" type="datetime-local" name="starts_at" id="banner-start"></div>
+              <div style="flex:1; min-width:200px;"><label class="lbl">{{ _('Tot') }}</label>
+                <input class="input" type="datetime-local" name="ends_at" id="banner-end"></div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+              <div style="flex:1; min-width:160px;"><label class="lbl">{{ _('Doelbereik') }}</label>
+                <select class="input" name="scope_kind" id="banner-scope-kind">
+                  <option value="org">{{ _('Iedereen') }}</option>
+                  <option value="domain">{{ _('Verzenddomein') }}</option>
+                  <option value="department">{{ _('Afdeling') }}</option>
+                  <option value="group">{{ _('M365-groep') }}</option>
+                </select>
+              </div>
+              <div style="flex:2; min-width:220px;"><label class="lbl">{{ _('Waarde') }} <span style="color:var(--muted); font-weight:400;">· {{ _('bv. acme.be, Sales, of een M365-groep') }}</span></label>
+                <input class="input" name="scope_value" id="banner-scope-value" list="banner-scope-groups" placeholder="acme.be">
+                {% if sig_groups %}<datalist id="banner-scope-groups">{% for g in sig_groups %}<option value="{{ g.id }}" label="{{ g.name }}">{% endfor %}</datalist>{% endif %}
+              </div>
+            </div>
+            <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+              <label style="display:flex; gap:6px; align-items:center; font-size:12.5px;"><input type="checkbox" name="enabled" id="banner-enabled" checked> {{ _('Ingeschakeld') }}</label>
+              <label style="display:flex; gap:6px; align-items:center; font-size:12.5px;" title="{{ _('Telt weergaven en clicks — alleen aggregaat, geen persoonsgegevens.') }}"><input type="checkbox" name="track" id="banner-track"> {{ _('Meting (weergaven + clicks)') }}</label>
+              <span style="flex:1;"></span>
+              <button type="button" class="btn btn-ghost btn-sm" id="sig-banner-reset" hidden>{{ _('Annuleer bewerken') }}</button>
+              <button class="btn btn-secondary btn-sm">{{ _('Banner opslaan') }}</button>
+            </div>
+          </form>
+        </div>
+        {% for b in sig_banners %}
+          <form id="del-banner-{{ b.id }}" method="post" style="display:none;"
+                action="{{ url_for('web.admin_signature_banner_delete', banner_id=b.id) }}"
+                data-confirm="{{ _('Deze banner verwijderen?') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          </form>
+        {% endfor %}
+        <script type="application/json" id="sig-banners-data" nonce="{{ csp_nonce }}">{{ sig_banners_data|tojson }}</script>
+        {% endif %}
+
+        {% if can_manage_signatures %}
+        {# ── Eigen variabelen ── #}
+        <div class="card" style="padding:18px; margin-bottom:16px;">
+          <div style="font-size:14px; font-weight:800; margin-bottom:4px;">{{ _('Eigen velden') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); margin-bottom:12px;">
+            {{ _('Naast de vaste M365-velden (functie, telefoon, …) kan je eigen placeholders maken — bv. een LinkedIn-URL of aansluitnummer. Jij vult ze hier voor iedereen in; collega’s kunnen hun eigen waarde ook zelf invullen op Instellingen → Mijn profiel. Of koppel een variabele aan een Microsoft 365-/Entra-veld (bv. “city” of “onPremisesExtensionAttributes.extensionAttribute3”) — dan haalt Otto de waarde automatisch op.') }}
+          </div>
+
+          <form method="post" action="{{ url_for('web.admin_signature_var_add') }}"
+                style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input class="input" name="label" placeholder="{{ _('bv. LinkedIn-URL') }}" style="flex:1; min-width:160px; max-width:260px;">
+            <input class="input" name="graph_attr" placeholder="{{ _('M365-veld (optioneel)') }}" style="flex:1; min-width:160px; max-width:280px;">
+            <button class="btn btn-secondary btn-sm">+ {{ _('Variabele toevoegen') }}</button>
+          </form>
+
+          {% if sig_variables %}
+            <form method="post" action="{{ url_for('web.admin_signature_var_values') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+                  <thead>
+                    <tr style="text-align:left; color:var(--muted); border-bottom:1px solid var(--border);">
+                      <th style="padding:6px 8px;">{{ _('Gebruiker') }}</th>
+                      {% for v in sig_variables %}
+                        <th style="padding:6px 8px; white-space:nowrap;">
+                          {{ v.label }} <code style="font-size:11px; color:var(--muted-3);">{{ '{{' }}{{ v.key }}{{ '}}' }}</code>
+                          {% if v.is_mapped %}<span class="pill" style="font-size:10px;" title="{{ v.graph_attr }}">M365</span>{% endif %}
+                          <button class="btn btn-ghost btn-sm" form="del-var-{{ v.id }}"
+                                  style="color:var(--danger); padding:0 4px;" title="{{ _('Verwijderen') }}">✕</button>
+                        </th>
+                      {% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for u in sig_members %}
+                      <tr style="border-bottom:1px solid var(--divider);">
+                        <td style="padding:6px 8px; font-weight:600; white-space:nowrap;">{{ u.name or u.email }}</td>
+                        {% for v in sig_variables %}
+                          <td style="padding:4px 6px;">
+                            <input class="input" style="height:32px; font-size:12.5px; min-width:140px;"
+                                   name="val-{{ v.id }}-{{ u.id }}" value="{{ sig_var_values.get(v.id ~ '-' ~ u.id, '') }}"
+                                   {% if v.is_mapped %}disabled title="{{ _('Automatisch uit Microsoft 365') }}"{% endif %}>
+                          </td>
+                        {% endfor %}
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <button class="btn btn-secondary btn-sm" style="margin-top:10px;">{{ _('Waarden opslaan') }}</button>
+            </form>
+            {% for v in sig_variables %}
+              <form id="del-var-{{ v.id }}" method="post" style="display:none;"
+                    action="{{ url_for('web.admin_signature_var_delete', var_id=v.id) }}"
+                    data-confirm="{{ _('Variabele “%(label)s” en alle ingevulde waarden verwijderen?')|format(label=v.label) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              </form>
+            {% endfor %}
+          {% else %}
+            <div style="font-size:12.5px; color:var(--muted-3);">{{ _('Nog geen eigen variabelen.') }}</div>
+          {% endif %}
+        </div>
+
+        {# ── Ingebedde afbeeldingen (logo's/banners → CID) ── #}
+        <div class="card" style="padding:18px; margin-bottom:16px;" id="sig-assets">
+          <div style="font-size:14px; font-weight:800; margin-bottom:4px;">{{ _('Ingebedde afbeeldingen') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); margin-bottom:12px;">
+            {{ _('Upload een logo of banner. In de verzonden mail gaat de afbeelding als verborgen bijlage mee (Content-ID), zodat mailclients ze niet als “externe afbeelding” blokkeren. Voeg ze in de editor in of plak de getoonde URL in je HTML.') }}
+          </div>
+          <form method="post" action="{{ url_for('web.admin_signature_asset_upload') }}" enctype="multipart/form-data"
+                style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select class="input" name="kind" style="max-width:140px;">
+              <option value="logo">{{ _('Logo') }}</option>
+              <option value="banner">{{ _('Banner') }}</option>
+              <option value="image">{{ _('Afbeelding') }}</option>
+            </select>
+            <input type="file" name="file" accept="image/*" class="input" style="max-width:260px; padding:6px;">
+            <span style="font-size:11.5px; color:var(--muted);">{{ _('PNG/JPEG/GIF/WEBP/SVG · max. 2 MB') }}</span>
+            <span style="flex:1;"></span>
+            <button class="btn btn-secondary btn-sm">{{ _('Uploaden') }}</button>
+          </form>
+          {% if sig_assets %}
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              {% for a in sig_assets %}
+                <div class="sig-asset-card" style="border:1px solid var(--border); border-radius:12px; padding:10px; width:170px;">
+                  <div style="height:70px; display:flex; align-items:center; justify-content:center; background:#fff; border-radius:8px; overflow:hidden;">
+                    <img src="{{ url_for('web.signature_asset', asset_id=a.id) }}" alt="{{ a.filename }}" style="max-width:100%; max-height:66px;">
+                  </div>
+                  <div style="font-size:11px; color:var(--muted); margin:6px 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ a.filename }}">{{ a.kind }} · {{ a.filename }}</div>
+                  <div style="display:flex; gap:4px; align-items:center;">
+                    <button type="button" class="btn btn-secondary btn-sm" data-action="sig-insert-asset"
+                            data-src="{{ url_for('web.signature_asset', asset_id=a.id) }}" style="flex:1; padding:2px 6px;">{{ _('In editor') }}</button>
+                    <button class="btn btn-ghost btn-sm" form="del-asset-{{ a.id }}" style="color:var(--danger); padding:0 6px;" title="{{ _('Verwijderen') }}">✕</button>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div style="font-size:12.5px; color:var(--muted-3);">{{ _('Nog geen afbeeldingen.') }}</div>
+          {% endif %}
+        </div>
+
+        {# ── Eigen sjabloon importeren ── #}
+        {% if sig_import_available %}
+        <div class="card" style="padding:18px; margin-bottom:16px;" id="sig-import">
+          <div style="font-size:14px; font-weight:800; margin-bottom:4px;">{{ _('Eigen sjabloon importeren') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); margin-bottom:12px;">
+            {{ _('Plak de HTML van een bestaand ontwerp (of upload een .html-bestand) om het als herbruikbaar sjabloon in de galerij te bewaren. Otto maakt de HTML e-mailveilig; placeholders zoals {{naam}} blijven behouden.') }}
+          </div>
+          <form method="post" action="{{ url_for('web.admin_signature_template_import') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+              <div style="flex:1; min-width:200px;">
+                <label class="lbl">{{ _('Naam') }}</label>
+                <input class="input" name="name" required placeholder="{{ _('bv. Campagne kerst 2026') }}">
+              </div>
+              <div style="flex:2; min-width:200px;">
+                <label class="lbl">{{ _('Omschrijving') }} <span style="color:var(--muted); font-weight:400;">· {{ _('optioneel') }}</span></label>
+                <input class="input" name="description" placeholder="{{ _('Korte omschrijving voor de galerij') }}">
+              </div>
+            </div>
+            <label class="lbl">{{ _('HTML') }}</label>
+            <textarea class="textarea" name="html" rows="6" style="font-family:ui-monospace,monospace; font-size:12px;"
+                      placeholder="&lt;table&gt;…&lt;/table&gt;"></textarea>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+              <input type="file" name="file" accept=".html,.htm" class="input" style="max-width:260px; padding:6px;">
+              <span style="font-size:11.5px; color:var(--muted);">{{ _('of upload een .html-bestand (max. 256 KB)') }}</span>
+              <span style="flex:1;"></span>
+              <button class="btn btn-secondary btn-sm">{{ _('Sjabloon importeren') }}</button>
+            </div>
+          </form>
+        </div>
+        {% endif %}
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {# ─────────────── TAB: Beveiliging & aflevering ─────────────── #}
+      {% if can_manage_signatures or can_manage_cloud %}
+      <section id="tab-deliver" hidden>
+        {# ── Centraal beheer: gebruiker-voorstellen met goedkeuring ── #}
+        {% if can_manage_signatures %}
+        <div class="card" style="padding:18px; margin-bottom:16px;">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:220px;">
+              <div style="font-size:14px; font-weight:800;">{{ _('Centraal beheer') }}</div>
+              <div style="font-size:12.5px; color:var(--muted); margin-top:4px; line-height:1.5;">
+                {{ _('IT beheert de handtekeningen centraal (per domein). Staat dit aan, dan kan een gebruiker zijn eigen handtekening-velden (functie, telefoon, …) niet meer rechtstreeks wijzigen — hij dient een voorstel in dat jij hieronder goedkeurt of afwijst.') }}
+              </div>
+            </div>
+            <form method="post" action="{{ url_for('web.admin_signature_central_save') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <label class="switch" style="display:flex; gap:8px; align-items:center; cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="checkbox" name="central_management" data-submit-on-change {{ 'checked' if central_management }}>
+                {{ _('Aan') if central_management else _('Uit') }}
+              </label>
+            </form>
+          </div>
+
+          {% if central_management %}
+            <div style="border-top:1px solid var(--divider); margin-top:14px; padding-top:12px;">
+              <div style="font-size:12.5px; font-weight:700; margin-bottom:8px;">
+                {{ _('Wachtende voorstellen') }} {% if central_pending %}<span class="pill">{{ central_pending|length }}</span>{% endif %}
+              </div>
+              {% for req in central_pending %}
+                <div class="card" style="padding:12px 14px; margin-bottom:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                  <div style="flex:1; min-width:220px;">
+                    <strong style="font-size:13px;">{{ req.user }}</strong>
+                    <div style="font-size:12px; color:var(--muted); margin-top:4px;">
+                      {% for label, val in req.changes %}
+                        <span class="pill" style="margin:2px 4px 2px 0;">{{ label }}: <b>{{ val }}</b></span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <form method="post" action="{{ url_for('web.admin_signature_request_approve', req_id=req.id) }}" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-primary btn-sm">{{ _('Goedkeuren') }}</button>
+                  </form>
+                  <form method="post" action="{{ url_for('web.admin_signature_request_reject', req_id=req.id) }}" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-ghost btn-sm" style="color:var(--danger);">{{ _('Afwijzen') }}</button>
+                  </form>
+                </div>
+              {% else %}
+                <div style="font-size:12.5px; color:var(--muted-3);">{{ _('Geen wachtende voorstellen.') }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {# ── Cloud-modus (Exchange transport-regel) ── #}
+        {% if can_manage_cloud %}
+        <div class="card" style="padding:18px; margin-bottom:16px;">
+          <div style="font-size:14px; font-weight:800; margin-bottom:4px;">{{ _('Afleveringsmodus (cloud/server-side)') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); margin-bottom:12px; line-height:1.5;">
+            {{ _('Standaard zet Otto de handtekening in het concept (alleen zichtbaar vanuit Outlook, maar je Verzonden-map klopt). In cloud-modus voegt een Exchange transport-regel de handtekening ná verzenden toe — ook op mobiel. Combo doet beide: Otto tekent in Outlook, de regel dekt de rest zonder dubbele handtekening.') }}
+          </div>
+          <div class="alert alert-info" style="font-size:12px; margin-bottom:14px;">
+            ⚠️ {{ _('Eerlijk: een transport-regel plakt onderaan, gebruikt Exchange-velden (eigen variabelen en {{foto}} kunnen niet mee), en werkt de map “Verzonden items” NIET bij — dat vereist een mailrelay, die Otto bewust niet gebruikt. In client-/combo-modus tonen Otto’s eigen concepten de handtekening wél correct in Verzonden items.') }}
+          </div>
+          <form method="post" action="{{ url_for('web.admin_signature_cloud_save') }}"
+                style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div style="flex:1; min-width:180px;">
+              <label class="lbl">{{ _('Modus') }}</label>
+              <select class="input" name="mode">
+                <option value="client" {{ 'selected' if cloud_mode=='client' }}>{{ _('Client (alleen Outlook)') }}</option>
+                <option value="cloud" {{ 'selected' if cloud_mode=='cloud' }}>{{ _('Cloud (server-side)') }}</option>
+                <option value="combo" {{ 'selected' if cloud_mode=='combo' }}>{{ _('Combo (beide)') }}</option>
+              </select>
+            </div>
+            <div style="flex:1; min-width:180px;">
+              <label class="lbl">{{ _('Handtekening voor de regel') }}</label>
+              <select class="input" name="signature_id">
+                <option value="">{{ _('Organisatie-standaard') }}</option>
+                {% for s in signatures %}<option value="{{ s.id }}" {{ 'selected' if cloud_signature_id==s.id }}>{{ s.name or s.domain or _('Standaard') }}</option>{% endfor %}
+              </select>
+            </div>
+            <button class="btn btn-secondary btn-sm">{{ _('Opslaan') }}</button>
+          </form>
+
+          {% if cloud_mode != 'client' %}
+            {% if cloud_unmappable %}
+              <div class="alert alert-error" style="font-size:12px; margin-bottom:12px;">
+                {{ _('Deze placeholders kunnen server-side niet ingevuld worden en vervallen in de cloud-regel:') }}
+                {% for k in cloud_unmappable %}<code>{{ '{{' }}{{ k }}{{ '}}' }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+              </div>
+            {% endif %}
+            <div style="font-size:12.5px; font-weight:700; margin-bottom:6px;">{{ _('Pas de regel toe in Exchange') }}</div>
+            <ol style="font-size:12.5px; color:var(--muted); margin:0 0 10px 18px; line-height:1.6;">
+              {% for step in cloud_instructions %}<li>{{ step }}</li>{% endfor %}
+            </ol>
+            {% if cloud_script %}
+              <textarea class="textarea" id="cloud-script" readonly rows="10"
+                        style="font-family:ui-monospace,monospace; font-size:11.5px;">{{ cloud_script }}</textarea>
+              <div style="display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" id="cloud-copy">{{ _('Kopieer script') }}</button>
+                <span style="flex:1;"></span>
+                {% if cloud_attested_at %}
+                  <span style="font-size:12px; color:var(--muted);">✓ {{ _('Toegepast op') }} {{ cloud_attested_at.strftime('%d/%m/%Y') }}</span>
+                {% endif %}
+                <form method="post" action="{{ url_for('web.admin_signature_cloud_attest') }}" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-primary btn-sm">{{ _('Ik heb de regel toegepast') }}</button>
+                </form>
+              </div>
+            {% else %}
+              <div style="font-size:12px; color:var(--muted-3);">{{ _('Stel eerst een HTML-handtekening in; dan verschijnt hier het script.') }}</div>
+            {% endif %}
+            {% if cloud_meeting_script %}
+              <details style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
+                <summary style="cursor:pointer; font-size:12.5px; font-weight:700;">{{ _('Ook Teams-/vergaderuitnodigingen brandmerken') }}</summary>
+                <p style="font-size:12px; color:var(--muted); margin:8px 0;">{{ _('Een aparte regel die dezelfde huisstijl-disclaimer op vergader- en Teams-uitnodigingen plakt (server-side via Exchange, alleen voor het berichttype “Calendaring”). Otto verzendt hier niets zelf.') }}</p>
+                <textarea class="textarea" id="cloud-meeting-script" readonly rows="10"
+                          style="font-family:ui-monospace,monospace; font-size:11.5px;">{{ cloud_meeting_script }}</textarea>
+                <button type="button" class="btn btn-secondary btn-sm" id="cloud-meeting-copy" style="margin-top:8px;">{{ _('Kopieer vergader-script') }}</button>
+              </details>
+            {% endif %}
+          {% endif %}
+        </div>
+        <script nonce="{{ csp_nonce }}">
+          (function () {
+            function wireCopy(btnId, taId) {
+              var btn = document.getElementById(btnId), ta = document.getElementById(taId);
+              if (!btn || !ta) return;
+              btn.addEventListener("click", function () {
+                ta.select();
+                (navigator.clipboard ? navigator.clipboard.writeText(ta.value) : Promise.reject()).catch(function () {
+                  try { document.execCommand("copy"); } catch (e) { /* laat de selectie staan */ }
+                });
+                var t = btn.textContent; btn.textContent = "✓"; setTimeout(function () { btn.textContent = t; }, 1200);
+              });
+            }
+            wireCopy("cloud-copy", "cloud-script");
+            wireCopy("cloud-meeting-copy", "cloud-meeting-script");
+          })();
+        </script>
+        {% endif %}
+      </section>
+      {% endif %}
+    </div>
+
+    {# ══════════════════════════ EDITOR-WEERGAVE ══════════════════════════ #}
+    {% if can_manage_signatures %}
+    <div id="sig-editorview" hidden>
+      <div class="ed-top">
+        <button type="button" class="btn btn-ghost btn-sm" data-action="sig-back">← {{ _('Terug') }}</button>
+        <div class="ed-name" id="sig-builder-title">{{ _('Nieuwe handtekening') }}</div>
+        <span style="flex:1;"></span>
+        <label class="ed-toggle" title="{{ _('Een uitgeschakelde handtekening wordt nooit toegepast.') }}">
+          <input type="checkbox" name="enabled" id="sig-enabled" form="sig-form" checked>
+          <span id="sig-enabled-label">{{ _('Ingeschakeld') }}</span>
+        </label>
+        <button type="button" class="btn btn-ghost" data-action="sig-back">{{ _('Annuleren') }}</button>
+        <button type="submit" form="sig-form" class="btn btn-primary">{{ _('Opslaan') }}</button>
+      </div>
+
+      <div class="card" id="sig-builder" style="padding:18px;"
+           data-samples='{{ sig_sample_values|tojson }}'
+           data-i18n-new="{{ _('Nieuwe handtekening') }}" data-i18n-edit="{{ _('Handtekening bewerken') }}">
+        <form method="post" action="{{ url_for('web.admin_signature_save') }}" id="sig-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="sig_id" id="sig-id" value="">
+          <input type="hidden" name="html" id="sig-html">
+          <input type="hidden" name="enabled_present" value="1">{# markeert dat de aan/uit-schakelaar meekomt #}
+          {# verborgen reset-knop: door de JS gebruikt om terug te zetten (Terug/Annuleren) #}
+          <button type="button" id="sig-reset" hidden></button>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+            <div style="flex:1; min-width:180px;">
+              <label class="lbl">{{ _('Naam') }}</label>
+              <input class="input" name="name" id="sig-name" placeholder="{{ _('bv. Acme Consulting') }}">
+            </div>
+            <div style="flex:1; min-width:180px;">
+              <label class="lbl">{{ _('Verzenddomein') }} <span style="color:var(--muted); font-weight:400;">· {{ _('leeg = standaard of via toewijzing') }}</span></label>
+              <input class="input" name="domain" id="sig-domain" placeholder="acme.be">
+            </div>
+          </div>
+
+          {# ── Sub-tabs: ontwerp + targeting/planning per handtekening ── #}
+          <div class="sig-etabs" role="tablist">
+            <button type="button" class="etab" role="tab" aria-selected="true" data-etab="etab-design">{{ _('Ontwerp') }}</button>
+            <button type="button" class="etab" role="tab" aria-selected="false" data-etab="etab-senders">{{ _('Afzenders') }}</button>
+            <button type="button" class="etab" role="tab" aria-selected="false" data-etab="etab-recipients">{{ _('Ontvangers') }}</button>
+            <button type="button" class="etab" role="tab" aria-selected="false" data-etab="etab-schedule">{{ _('Datum/tijd') }}</button>
+          </div>
+
+          <div class="etab-panel" id="etab-design">
+          {# ── Sjabloongalerij: begin met een kant-en-klaar ontwerp en bewerk het ── #}
+          <div class="sig-gallery" style="margin-bottom:14px;">
+            <div style="font-size:12px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--muted-3); margin-bottom:8px;">{{ _('Begin met een sjabloon') }}</div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              {% for t in sig_templates %}
+                <div class="sig-tpl-card" style="flex:1; min-width:190px; border:1px solid var(--border); border-radius:12px; padding:12px 14px;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <div style="font-size:13.5px; font-weight:700; flex:1;">{{ t.name }}</div>
+                    {% if t.source == 'custom' %}
+                      <span class="pill" style="font-size:10px;">{{ _('Eigen') }}</span>
+                      <button type="button" class="btn btn-ghost btn-sm" form="del-tpl-{{ t.id }}"
+                              style="color:var(--danger); padding:0 5px;" title="{{ _('Verwijderen') }}">✕</button>
+                    {% endif %}
+                  </div>
+                  <div style="font-size:11.5px; color:var(--muted); margin:3px 0 9px; line-height:1.4;">{{ t.desc }}</div>
+                  <button type="button" class="btn btn-secondary btn-sm" data-action="sig-load-template" data-tpl="{{ t.key }}">{{ _('Gebruik dit sjabloon') }} →</button>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          {# Bouwwijze: WYSIWYG-editor, eenvoudige builder, ruwe HTML, of alleen tekst. #}
+          <div class="viewswitch" id="sig-modes" style="max-width:520px;">
+            <a href="#" data-mode="editor">✎ {{ _('Editor') }}</a>
+            <a href="#" class="active" data-mode="simple">{{ _('Builder') }}</a>
+            <a href="#" data-mode="html">HTML</a>
+            <a href="#" data-mode="text">{{ _('Alleen tekst') }}</a>
+          </div>
+
+          {# ── WYSIWYG-editor (contenteditable + werkbalk) ── #}
+          <div id="sig-mode-editor" hidden>
+            <div class="sig-toolbar" id="sig-toolbar">
+              <button type="button" data-cmd="bold" title="{{ _('Vet') }}"><b>B</b></button>
+              <button type="button" data-cmd="italic" title="{{ _('Cursief') }}"><i>I</i></button>
+              <button type="button" data-cmd="underline" title="{{ _('Onderstreept') }}"><u>U</u></button>
+              <select id="sig-fontsize" class="sig-tb-select" title="{{ _('Lettergrootte') }}" aria-label="{{ _('Lettergrootte') }}">
+                <option value="">{{ _('Grootte') }}</option>
+                <option value="2">{{ _('Klein') }}</option>
+                <option value="3">{{ _('Normaal') }}</option>
+                <option value="4">{{ _('Groot') }}</option>
+                <option value="5">{{ _('Extra groot') }}</option>
+              </select>
+              <label class="sig-tb-color" title="{{ _('Tekstkleur') }}">A<input type="color" id="sig-fore" value="#1f2328"></label>
+              <span class="sig-tb-sep"></span>
+              <button type="button" data-cmd="justifyLeft" title="{{ _('Links uitlijnen') }}">⬅</button>
+              <button type="button" data-cmd="justifyCenter" title="{{ _('Centreren') }}">↔</button>
+              <button type="button" data-cmd="justifyRight" title="{{ _('Rechts uitlijnen') }}">➡</button>
+              <button type="button" data-cmd="insertUnorderedList" title="{{ _('Opsomming') }}">•</button>
+              <button type="button" data-cmd="insertOrderedList" title="{{ _('Genummerde lijst') }}">1.</button>
+              <span class="sig-tb-sep"></span>
+              <button type="button" data-cmd="link" title="{{ _('Link invoegen') }}">🔗</button>
+              <button type="button" data-cmd="image" title="{{ _('Afbeelding invoegen') }}">🖼</button>
+              <span class="sig-tb-sep"></span>
+              <button type="button" data-cmd="unlink" title="{{ _('Opmaak wissen') }}">✕</button>
+            </div>
+            <div id="sig-insert-panel" class="sig-insert-panel" hidden>
+              <input type="text" id="sig-insert-url" class="input" style="flex:2; min-width:160px;">
+              <input type="text" id="sig-insert-extra" class="input" style="flex:1; min-width:90px;" hidden>
+              <button type="button" class="btn btn-secondary btn-sm" id="sig-insert-ok">{{ _('Invoegen') }}</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="sig-insert-cancel">{{ _('Annuleren') }}</button>
+            </div>
+            <div id="sig-editor-area" class="sig-editor" contenteditable="true"
+                 aria-label="{{ _('Handtekening-editor') }}"></div>
+            <div style="font-size:11.5px; color:var(--muted); margin-top:6px;">
+              {{ _('Klik een placeholder-chip hieronder om hem op de cursorpositie in te voegen. Placeholders worden per gebruiker ingevuld.') }}
+            </div>
+          </div>
+
+          <div id="sig-mode-simple">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+              <div style="flex:2; min-width:220px;">
+                <label class="lbl">{{ _('Logo-URL') }} <span style="color:var(--muted); font-weight:400;">· {{ _('optioneel, https') }}</span></label>
+                <input class="input sig-b" id="sb-logo" placeholder="https://acme.be/logo.png">
+              </div>
+              <div style="flex:1; min-width:120px;">
+                <label class="lbl">{{ _('Accentkleur') }}</label>
+                <input class="input sig-b" id="sb-color" type="color" value="#6C4CE6" style="padding:4px; height:38px;">
+              </div>
+              <div style="flex:2; min-width:220px;">
+                <label class="lbl">{{ _('Website') }}</label>
+                <input class="input sig-b" id="sb-site" placeholder="https://www.acme.be">
+              </div>
+            </div>
+            <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px; font-size:12.5px; color:var(--text-3);">
+              <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" class="sig-b" id="sb-functie" checked> {{ _('Functietitel') }}</label>
+              <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" class="sig-b" id="sb-afdeling"> {{ _('Afdeling') }}</label>
+              <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" class="sig-b" id="sb-locatie"> {{ _('Locatie') }}</label>
+              <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" class="sig-b" id="sb-tel" checked> {{ _('Telefoon') }}</label>
+              <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" class="sig-b" id="sb-mobiel" checked> {{ _('Mobiel') }}</label>
+              <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" class="sig-b" id="sb-mail" checked> {{ _('E-mailadres') }}</label>
+            </div>
+            <div style="font-size:11.5px; color:var(--muted); margin-bottom:10px;">
+              {{ _('Velden die bij een gebruiker leeg zijn, verdwijnen automatisch uit zijn handtekening.') }}
+            </div>
+            <label class="lbl">{{ _('Slotgroet') }}</label>
+            <input class="input sig-b" id="sb-groet" value="{{ _('Met vriendelijke groeten,') }}" style="margin-bottom:10px;">
+            <label class="lbl">{{ _('Disclaimer / extra regel') }} <span style="color:var(--muted); font-weight:400;">· {{ _('optioneel') }}</span></label>
+            <textarea class="textarea sig-b" id="sb-disclaimer" rows="2" placeholder="{{ _('bv. Deze e-mail is vertrouwelijk…') }}"></textarea>
+          </div>
+
+          <div id="sig-mode-html" hidden>
+            <label class="lbl">{{ _('HTML van de handtekening') }}</label>
+            <textarea class="textarea" id="sig-html-src" rows="8" style="font-family:ui-monospace,monospace; font-size:12px;"></textarea>
+          </div>
+
+          <div id="sig-mode-text" hidden>
+            <label class="lbl">{{ _('Handtekening (platte tekst)') }}</label>
+            <textarea class="textarea" name="body" id="sig-body" rows="4" placeholder="{{ _('Met vriendelijke groeten,') }}&#10;Acme BV"></textarea>
+          </div>
+
+          <div style="margin:10px 0 4px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:11.5px; color:var(--muted); font-weight:700;">{{ _('Placeholders:') }}</span>
+            {% for key in placeholder_keys %}
+              <button type="button" class="move-chip" data-action="sig-placeholder" data-ph="{{ key }}">{{ '{{' }}{{ key }}{{ '}}' }}</button>
+            {% endfor %}
+            <span style="font-size:11.5px; color:var(--muted);">· {{ _('worden per gebruiker ingevuld') }}</span>
+          </div>
+
+          <div style="margin:6px 0 4px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:11.5px; color:var(--muted); font-weight:700;">{{ _('Boeking-knoppen:') }}</span>
+            <button type="button" class="move-chip" data-action="sig-snippet" data-snippet="calendly">Calendly</button>
+            <button type="button" class="move-chip" data-action="sig-snippet" data-snippet="bookings">Microsoft Bookings</button>
+            <button type="button" class="move-chip" data-action="sig-snippet" data-snippet="chilipiper">Chili Piper</button>
+            <span style="font-size:11.5px; color:var(--muted);">· {{ _('voegt een knop in — pas daarna de link aan') }}</span>
+          </div>
+
+          <label class="lbl" style="margin-top:10px;">{{ _('Voorbeeld (met jouw gegevens)') }}</label>
+          <iframe id="sig-preview" class="sig-preview-frame" sandbox="allow-same-origin" title="{{ _('Voorbeeld') }}"></iframe>
+          </div>{# /etab-design #}
+
+          {# ── Afzenders: wie krijgt deze handtekening (+ uitzonderingen) ── #}
+          <div class="etab-panel" id="etab-senders" hidden>
+            <div style="font-size:12.5px; color:var(--muted); margin-bottom:12px; line-height:1.5;">
+              {{ _('Standaard geldt de handtekening voor het verzenddomein hierboven. Wijs ze toe aan specifieke gebruikers of Microsoft 365-groepen (die winnen van het domein), of zonder domein/toewijzing wordt dit de organisatie-standaard.') }}
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+              <div style="flex:1; min-width:220px;">
+                <label class="lbl">{{ _('Toewijzen aan gebruikers') }} <span style="color:var(--muted); font-weight:400;">· {{ _('optioneel, wint van domein') }}</span></label>
+                <select class="input" name="user_ids" id="sig-users" multiple size="4" style="height:auto; padding:6px;">
+                  {% for u in sig_members %}<option value="{{ u.id }}">{{ u.name or u.email }}</option>{% endfor %}
+                </select>
+              </div>
+              <div style="flex:1; min-width:220px;">
+                <label class="lbl">{{ _('Toewijzen aan M365-groepen') }}</label>
+                {% if sig_groups is not none %}
+                  <select class="input" name="group_ids" id="sig-groups" multiple size="4" style="height:auto; padding:6px;">
+                    {% for g in sig_groups %}<option value="{{ g.id }}|{{ g.name }}">{{ g.name }}</option>{% endfor %}
+                  </select>
+                {% else %}
+                  <div style="font-size:12px; color:var(--muted); padding:10px 0;">{{ _('Niet beschikbaar — zie de melding bij de handtekeningen.') }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--divider); padding-top:12px;">
+              <div style="font-size:12.5px; font-weight:700; margin-bottom:2px;">{{ _('Uitzonderingen') }}</div>
+              <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">{{ _('Verzenders waarvoor deze handtekening juist NIET geldt (dan valt hun mail terug op een andere handtekening of de standaard).') }}</div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:220px;">
+                  <label class="lbl">{{ _('Uitgezonderde gebruikers') }}</label>
+                  <select class="input" name="exclude_user_ids" id="sig-ex-users" multiple size="3" style="height:auto; padding:6px;">
+                    {% for u in sig_members %}<option value="{{ u.id }}">{{ u.name or u.email }}</option>{% endfor %}
+                  </select>
+                </div>
+                <div style="flex:1; min-width:220px;">
+                  <label class="lbl">{{ _('Uitgezonderde M365-groepen') }}</label>
+                  {% if sig_groups is not none %}
+                    <select class="input" name="exclude_group_ids" id="sig-ex-groups" multiple size="3" style="height:auto; padding:6px;">
+                      {% for g in sig_groups %}<option value="{{ g.id }}|{{ g.name }}">{{ g.name }}</option>{% endfor %}
+                    </select>
+                  {% else %}
+                    <div style="font-size:12px; color:var(--muted); padding:10px 0;">{{ _('Niet beschikbaar.') }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {# ── Ontvangers: intern/extern ── #}
+          <div class="etab-panel" id="etab-recipients" hidden>
+            <div style="font-size:12.5px; color:var(--muted); margin-bottom:12px; line-height:1.5;">
+              {{ _('Op welke ontvangers deze handtekening van toepassing is. “Intern/extern” wordt bepaald op basis van je geverifieerde domeinen; in het Outlook-taakvenster (zonder bekende ontvanger) geldt ze als “alle”.') }}
+            </div>
+            <label class="scope-opt"><input type="radio" name="recipient_scope" value="all" checked> <span><b>{{ _('Alle ontvangers') }}</b><br><span style="color:var(--muted); font-size:12px;">{{ _('intern én extern') }}</span></span></label>
+            <label class="scope-opt"><input type="radio" name="recipient_scope" value="internal"> <span><b>{{ _('Alleen intern') }}</b><br><span style="color:var(--muted); font-size:12px;">{{ _('ontvangers binnen je eigen organisatie') }}</span></span></label>
+            <label class="scope-opt"><input type="radio" name="recipient_scope" value="external"> <span><b>{{ _('Alleen extern') }}</b><br><span style="color:var(--muted); font-size:12px;">{{ _('ontvangers buiten je organisatie') }}</span></span></label>
+          </div>
+
+          {# ── Datum/tijd: geplande campagne met tijdvenster ── #}
+          <div class="etab-panel" id="etab-schedule" hidden>
+            <div class="alert alert-info" style="font-size:12px; margin-bottom:14px;">
+              {{ _('Laat leeg voor een permanente handtekening. Met een tijdvenster geldt ze alleen in die periode — daarna neemt de permanente standaard vanzelf weer over. Zo kunnen op één domein een standaard én een geplande campagne naast elkaar bestaan, zolang de campagnes elkaar niet overlappen.') }}
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:200px;"><label class="lbl">{{ _('Actief van') }} <span style="color:var(--muted); font-weight:400;">· {{ _('optioneel') }}</span></label>
+                <input class="input" type="datetime-local" name="starts_at" id="sig-start"></div>
+              <div style="flex:1; min-width:200px;"><label class="lbl">{{ _('Actief tot') }}</label>
+                <input class="input" type="datetime-local" name="ends_at" id="sig-end"></div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="height:40px; margin-top:16px;">{{ _('Opslaan') }}</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {# ══════════════════════════ SJABLOONKIEZER (modal) ══════════════════════════ #}
+    {% if can_manage_signatures %}
+    <div class="sig-scrim" id="sig-tpl-scrim" hidden>
+      <div class="sig-modal" role="dialog" aria-modal="true" aria-labelledby="sig-tpl-title">
+        <div class="sig-modal-head">
+          <h2 id="sig-tpl-title">{{ _('Kies een sjabloon') }}</h2>
+          <button type="button" class="icon-btn" style="margin-left:auto;" data-action="sig-tpl-close" aria-label="{{ _('Sluiten') }}">✕</button>
+        </div>
+        <div class="sig-modal-body">
+          {% if can_manage_campaigns %}
+          <form method="post" action="{{ url_for('web.admin_signature_brand_save') }}" class="sig-kitbox">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="name" value="{{ _('Standaard') }}">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+              <div style="flex:1; min-width:220px;">
+                <div style="font-size:16px; font-weight:800;">{{ _('Stel je merkkit samen') }}</div>
+                <div style="font-size:12.5px; color:var(--muted); margin-top:3px;">{{ _('Logo en merkkleur die al je handtekeningen overnemen via {{logo}} en {{merk_kleur}}. Wordt bewaard als je standaard-merkkit.') }}</div>
+              </div>
+              <button class="btn btn-secondary btn-sm">{{ _('Merkkit opslaan') }}</button>
+            </div>
+            <div class="sig-kitgrid">
+              <div><label class="lbl">{{ _('Logo-URL') }}</label>
+                <input class="input" name="logo_url" placeholder="https://acme.be/logo.png"></div>
+              <div><label class="lbl">{{ _('Merkkleur') }}</label>
+                <input class="input" name="accent_color" type="color" value="#6C4CE6" style="padding:4px; height:38px;"></div>
+              <div style="align-self:end; font-size:11.5px; color:var(--muted);">{{ _('Of vul later per domein in bij Merk & campagnes.') }}</div>
+            </div>
+          </form>
+          {% endif %}
+
+          <div style="font-size:11.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted-3); margin-bottom:12px;">{{ _('Sjablonen') }} · {{ sig_templates|length }}</div>
+          <div class="sig-tplgrid">
+            {% for t in sig_templates %}
+              <button type="button" class="sig-tplcard" data-action="sig-load-template" data-tpl="{{ t.key }}" data-from-modal="1">
+                {% if t.source == 'custom' %}<span class="pill tp-badge">{{ _('Eigen') }}</span>{% endif %}
+                <div class="tp-name">{{ t.name }}</div>
+                <div class="tp-desc">{{ t.desc }}</div>
+              </button>
+            {% endfor %}
+            <button type="button" class="sig-tplcard" data-action="sig-load-template" data-tpl="" data-from-modal="1">
+              <div class="tp-name">{{ _('Leeg beginnen') }}</div>
+              <div class="tp-desc">{{ _('Start met een blanco ontwerp en bouw zelf op.') }}</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Verborgen verwijder-forms voor eigen sjablonen + assets (buiten forms: nesting is ongeldig). #}
+    {% if can_manage_signatures %}
+    {% for t in sig_templates if t.source == 'custom' %}
+      <form id="del-tpl-{{ t.id }}" method="post" style="display:none;"
+            action="{{ url_for('web.admin_signature_template_delete', tpl_id=t.id) }}"
+            data-confirm="{{ _('Sjabloon “%(name)s” verwijderen?')|format(name=t.name) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      </form>
+    {% endfor %}
+    {% for a in sig_assets %}
+      <form id="del-asset-{{ a.id }}" method="post" style="display:none;"
+            action="{{ url_for('web.admin_signature_asset_delete', asset_id=a.id) }}"
+            data-confirm="{{ _('Deze afbeelding verwijderen?') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      </form>
+    {% endfor %}
+    <script type="application/json" id="sig-templates-data" nonce="{{ csp_nonce }}">{{ sig_templates|tojson }}</script>
+    <script type="application/json" id="sig-rules-data" nonce="{{ csp_nonce }}">{{ sig_rules_data|tojson }}</script>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{{ super() }}
+<script src="{{ url_for('static', filename='js/signatures.js') }}"></script>
+{% endblock %}

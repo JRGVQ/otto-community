@@ -1,0 +1,157 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Eigen mailbox-app') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:760px;">
+    <div class="page-h">{{ _('Eigen mailbox-app koppelen') }}</div>
+    <div class="page-sub">
+      {{ _('Standaard koppelt Otto via de gedeelde app. Wil je de toestemming binnen je eigen Microsoft/Google-tenant houden, vul dan hier je eigen app-gegevens in. Secrets worden versleuteld bewaard.') }}
+    </div>
+
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['toast','info','error'] %}
+      <div class="alert alert-{{ 'error' if cat=='error' else 'info' }}">{{ m }}</div>
+    {% endfor %}
+
+    <form method="post" action="{{ url_for('web.connector_settings') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if from_onboarding %}<input type="hidden" name="from_onboarding" value="1">{% endif %}
+
+      {# ── Microsoft 365 ───────────────────────────────────────────────── #}
+      <div class="card" style="padding:20px; margin-bottom:18px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+          <div class="integ-icon" style="background:#0078D4;">M</div>
+          <div style="font-size:15px; font-weight:800;">Microsoft 365</div>
+          {% if uses_own_ms %}<span class="pill pill-concept">{{ _('Eigen app actief') }}</span>{% endif %}
+        </div>
+        <div style="font-size:12.5px; color:var(--muted); margin:6px 0 14px;">
+          {{ _('Registreer een app in Entra ID met') }} <strong>Mail.ReadWrite</strong> {{ _('(geen Mail.Send). Redirect-URI om te plakken:') }}<br>
+          <code style="user-select:all;">{{ ms_redirect }}</code>
+        </div>
+        <label class="lbl">Application (client) ID</label>
+        <input class="input" name="graph_app_id" value="{{ org.graph_app_id or '' }}" placeholder="00000000-0000-0000-0000-000000000000">
+        <label class="lbl" style="margin-top:10px;">Directory (tenant) ID</label>
+        <input class="input" name="graph_tenant_id" value="{{ org.graph_tenant_id or '' }}" placeholder="{{ _('je-tenant-GUID of organizations') }}">
+        <label class="lbl" style="margin-top:10px;">Client secret {% if org.graph_client_secret_enc %}<span style="color:var(--muted);">· {{ _('al ingesteld, leeg laten om te behouden') }}</span>{% endif %}</label>
+        <input class="input" type="password" name="graph_client_secret" autocomplete="new-password" placeholder="{{ '••••••••••' if org.graph_client_secret_enc else _('Value van je client secret') }}">
+      </div>
+
+      {# ── Google Workspace ────────────────────────────────────────────── #}
+      <div class="card" style="padding:20px; margin-bottom:18px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+          <div class="integ-icon" style="background:#EA4335;">G</div>
+          <div style="font-size:15px; font-weight:800;">Google Workspace</div>
+          {% if uses_own_google %}<span class="pill pill-concept">{{ _('Eigen app actief') }}</span>{% endif %}
+        </div>
+        <div style="font-size:12.5px; color:var(--muted); margin:6px 0 14px;">
+          {{ _('OAuth-client met de') }} <strong>gmail.readonly</strong>/<strong>gmail.modify</strong>{{ _('-scope. Geautoriseerde redirect-URI:') }}<br>
+          <code style="user-select:all;">{{ google_redirect }}</code>
+        </div>
+        <label class="lbl">Client ID</label>
+        <input class="input" name="google_client_id" value="{{ org.google_client_id or '' }}" placeholder="...apps.googleusercontent.com">
+        <label class="lbl" style="margin-top:10px;">Client secret {% if org.google_client_secret_enc %}<span style="color:var(--muted);">· {{ _('al ingesteld, leeg laten om te behouden') }}</span>{% endif %}</label>
+        <input class="input" type="password" name="google_client_secret" autocomplete="new-password" placeholder="{{ '••••••••••' if org.google_client_secret_enc else _('Client secret') }}">
+      </div>
+
+      {# ── Login-SSO (OIDC) ─────────────────────────────────────────────── #}
+      <div class="card" style="padding:20px; margin-bottom:18px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+          <div class="integ-icon" style="background:#6C4CE6;">◆</div>
+          <div style="font-size:15px; font-weight:800;">Login-SSO (OIDC)</div>
+          {% if org.sso and org.sso.oidc_issuer and org.sso.enabled %}<span class="pill pill-concept">{{ _('Actief') }}</span>{% endif %}
+        </div>
+        <div style="font-size:12.5px; color:var(--muted); margin:6px 0 14px;">
+          {{ _('Laat je medewerkers inloggen via je bedrijfs-IdP (Microsoft Entra, Google, Okta). Geautoriseerde redirect-URI:') }}<br><code style="user-select:all;">{{ sso_redirect }}</code>
+        </div>
+        <label class="lbl">Issuer-URL</label>
+        <input class="input" name="oidc_issuer" value="{{ org.sso.oidc_issuer if org.sso else '' }}" placeholder="https://login.microsoftonline.com/<tenant>/v2.0">
+        <label class="lbl" style="margin-top:10px;">Client ID</label>
+        <input class="input" name="oidc_client_id" value="{{ org.sso.oidc_client_id if org.sso else '' }}" placeholder="{{ _('client-id van je IdP-app') }}">
+        <label class="lbl" style="margin-top:10px;">Client secret {% if org.sso and org.sso.oidc_client_secret_enc %}<span style="color:var(--muted);">· {{ _('al ingesteld, leeg laten om te behouden') }}</span>{% endif %}</label>
+        <input class="input" type="password" name="oidc_client_secret" autocomplete="new-password" placeholder="{{ '••••••••••' if (org.sso and org.sso.oidc_client_secret_enc) else _('Client secret') }}">
+        <div style="border-top:1px solid var(--line); margin:16px 0 12px; padding-top:14px;">
+          <div style="font-size:13px; font-weight:800; margin-bottom:4px;">{{ _('Of SAML 2.0') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); margin-bottom:10px;">
+            {{ _('Voor een IdP die geen OIDC spreekt (ADFS, Okta SAML). Zet Otto in je IdP met deze metadata:') }}<br>
+            <code style="user-select:all;">{{ saml_metadata_url }}</code><br>
+            {{ _('Antwoord-URL (ACS):') }} <code style="user-select:all;">{{ saml_acs_url }}</code>
+          </div>
+          <label class="lbl">{{ _('Aanmeld-URL van de IdP') }}</label>
+          <input class="input" name="saml_sso_url" value="{{ org.sso.saml_sso_url if org.sso else '' }}" placeholder="https://login.microsoftonline.com/<tenant>/saml2">
+          <label class="lbl" style="margin-top:10px;">{{ _('EntityID van de IdP') }} <span style="color:var(--muted);">· {{ _('optioneel') }}</span></label>
+          <input class="input" name="saml_entity_id" value="{{ org.sso.saml_entity_id if org.sso else '' }}" placeholder="https://sts.windows.net/<tenant>/">
+          <label class="lbl" style="margin-top:10px;">{{ _('Ondertekeningscertificaat van de IdP') }}</label>
+          <textarea class="textarea" name="saml_x509_cert" rows="4" placeholder="-----BEGIN CERTIFICATE-----&#10;MIID…&#10;-----END CERTIFICATE-----">{{ org.sso.saml_x509_cert if org.sso else '' }}</textarea>
+          <label style="display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px; cursor:pointer;">
+            <input type="checkbox" name="sso_prefer_saml" {{ 'checked' if (org.sso and (org.sso.method or '').upper().startswith('SAML')) }}>
+            {{ _('SAML gebruiken als beide zijn ingesteld') }}
+          </label>
+        </div>
+
+        <label class="lbl" style="margin-top:10px;">{{ _('Toegestane e-maildomeinen') }} <span style="color:var(--muted);">· {{ _('spatie- of kommagescheiden') }}</span></label>
+        <input class="input" name="allowed_domains" value="{{ (org.sso.allowed_domains or [])|join(' ') if org.sso else '' }}" placeholder="bedrijf.be dochter.be">
+        <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" name="sso_enabled" {{ 'checked' if (org.sso and org.sso.enabled) }}> {{ _('SSO inschakelen') }}
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="height:42px;">{{ _('Opslaan') }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('auth.onboarding') if from_onboarding else url_for('web.integrations') }}" style="height:42px; margin-left:8px;">{{ _('Terug naar onboarding') if from_onboarding else _('Terug') }}</a>
+    </form>
+
+    <div class="card" style="padding:20px; margin-bottom:18px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+        <div class="integ-icon" style="background:#2D9CDB;">◈</div>
+        <div style="font-size:15px; font-weight:800;">{{ _('Domeinverificatie') }}</div>
+      </div>
+      <div style="font-size:12.5px; color:var(--muted); margin:6px 0 14px;">
+        {{ _('Bewijs dat je dit domein beheert met een DNS-TXT-record. Een geverifieerd domein is exclusief van jouw organisatie: niemand anders kan er SSO voor instellen of een tweede omgeving op registreren.') }}
+      </div>
+
+      {% for claim in domain_claims %}
+      <div style="border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <strong style="font-size:14px;">{{ claim.domain }}</strong>
+          {% if claim.is_verified %}
+            <span class="pill pill-concept">{{ _('Geverifieerd') }}</span>
+          {% else %}
+            <span class="pill">{{ _('In afwachting') }}</span>
+          {% endif %}
+          <span style="flex:1;"></span>
+          {% if not claim.is_verified %}
+          <form method="post" action="{{ url_for('web.domain_verify', claim_id=claim.id) }}" style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-ghost" style="height:32px;" type="submit">{{ _('Controleer nu') }}</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('web.domain_remove', claim_id=claim.id) }}" style="display:inline;"
+                data-confirm="{{ _('Dit domein verwijderen?') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-ghost" style="height:32px;" type="submit">{{ _('Verwijderen') }}</button>
+          </form>
+        </div>
+        {% if not claim.is_verified %}
+        <div style="font-size:12.5px; color:var(--muted); margin-top:10px;">
+          {{ _('Maak dit TXT-record aan bij je DNS-provider:') }}
+          <div style="margin-top:6px;">
+            <div>{{ _('Naam') }}: <code style="user-select:all;">{{ claim.record_name }}</code></div>
+            <div>{{ _('Waarde') }}: <code style="user-select:all;">{{ claim.record_value }}</code></div>
+          </div>
+          {% if claim.last_error %}
+          <div style="color:var(--danger, #d94b4b); margin-top:8px;">{{ claim.last_error }}</div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+      <div style="font-size:12.5px; color:var(--muted); margin-bottom:12px;">{{ _('Nog geen domein geclaimd.') }}</div>
+      {% endfor %}
+
+      <form method="post" action="{{ url_for('web.domain_claim') }}" style="display:flex; gap:8px; margin-top:12px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="input" name="domain" placeholder="bedrijf.be" style="flex:1;" required>
+        <button class="btn btn-primary" style="height:42px;" type="submit">{{ _('Domein toevoegen') }}</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

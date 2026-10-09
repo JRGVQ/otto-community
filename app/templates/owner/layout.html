@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="otto-shell">
+  <div class="topbar">
+    <a class="brand" href="{{ url_for('owner.dashboard') }}">
+      <div class="logo-badge" style="background:#221C33;"><div class="core"></div></div>
+      <div class="name">Otto <span style="font-weight:700; color:var(--accent);">{{ _('Platform') }}</span></div>
+    </a>
+    <div class="spacer"></div>
+    <button class="theme-toggle" data-action="theme-toggle" aria-label="{{ _('Licht/donker thema') }}" style="margin-right:4px;"><span class="t-moon">🌙</span><span class="t-sun">☀</span></button>
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('web.inbox') }}" style="height:34px;">← {{ _('Terug naar app') }}</a>
+    <div style="display:flex; align-items:center; gap:10px; margin-left:6px;">
+      <div class="user-meta"><div class="nm">{{ me.name }}</div><div class="sub">{{ _('Beheerder') }}</div></div>
+      <div class="avatar avatar-36" style="background:{{ me.avatar_color }};">{{ me.initials }}</div>
+      <a href="{{ url_for('auth.logout') }}" title="{{ _('Afmelden') }}" style="color:var(--muted); font-size:18px; padding:4px 6px;">⎋</a>
+    </div>
+  </div>
+  <div class="body-row">
+    <div class="sidebar">
+      <div class="nav">
+        <a class="nav-item {{ 'active' if active=='dashboard' }}" href="{{ url_for('owner.dashboard') }}"><span class="dot-sq" style="background:#6C4CE6;"></span><span class="lbl">{{ _('Overzicht') }}</span></a>
+        <a class="nav-item {{ 'active' if active=='companies' }}" href="{{ url_for('owner.companies') }}"><span class="dot-sq" style="background:#2D9CDB;"></span><span class="lbl">{{ _('Bedrijven') }}</span></a>
+        <a class="nav-item {{ 'active' if active=='health' }}" href="{{ url_for('owner.health') }}"><span class="dot-sq" style="background:#27AE60;"></span><span class="lbl">{{ _('Systeemstatus') }}</span></a>
+        <a class="nav-item {{ 'active' if active=='scheduler' }}" href="{{ url_for('owner.scheduler') }}"><span class="dot-sq" style="background:#0078D4;"></span><span class="lbl">{{ _('Scheduler') }}</span></a>
+        <a class="nav-item {{ 'active' if active=='events' }}" href="{{ url_for('owner.events') }}"><span class="dot-sq" style="background:#27AE60;"></span><span class="lbl">{{ _('Gebeurtenissen') }}</span></a>
+        <a class="nav-item {{ 'active' if active=='logs' }}" href="{{ url_for('owner.logs') }}"><span class="dot-sq" style="background:#F2C94C;"></span><span class="lbl">{{ _('Logboek') }}</span></a>
+        <a class="nav-item {{ 'active' if active=='debug' }}" href="{{ url_for('owner.debug') }}"><span class="dot-sq" style="background:#EB5757;"></span><span class="lbl">{{ _('Debug & errors') }}</span></a>
+        <a class="nav-item {{ 'active' if active=='email' }}" href="{{ url_for('owner.email_console') }}"><span class="dot-sq" style="background:#0EA5A4;"></span><span class="lbl">{{ _('E-mail & sjablonen') }}</span></a>
+      </div>
+      <div class="spacer" style="min-height:12px;"></div>
+      <div class="side-note admin">
+        <div class="t">{{ _('Platform-backoffice') }}</div>
+        <div class="d">{{ _('Alleen voor de beheerder van deze installatie. Beheer hier alle bedrijven en omgevingen.') }}</div>
+      </div>
+    </div>
+    <div class="main">{% block screen %}{% endblock %}</div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "owner/layout.html" %}
+{% block title %}{{ _('Platform — Bedrijven') }}{% endblock %}
+{% set sm = {'active':(_('Actief'),'#1F8A5B','#EAF7F0'),'suspended':(_('Geschorst'),'#EB5757','#FDECEC'),'geen':(_('Geen'),'#9AA4B2','#F2F2F7')} %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:1040px;">
+    <div style="display:flex; align-items:center; margin-bottom:4px;">
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em; flex:1;">{{ _('Bedrijven') }}</div>
+      <a class="btn btn-primary" href="{{ url_for('owner.create_company') }}">+ {{ _('Nieuw bedrijf') }}</a>
+    </div>
+    <div class="page-sub">{{ _('Alle omgevingen en hun gebruik. Klik een bedrijf om het te beheren.') }}</div>
+
+    <div class="table">
+      <div class="thead" style="grid-template-columns:2.2fr 1.4fr 1fr;">
+        <div>{{ _('Bedrijf') }}</div><div>{{ _('Eigenaar') }}</div><div>{{ _('Status') }}</div>
+      </div>
+      {% for r in rows %}
+        {% set st = sm.get(r.status, sm['geen']) %}
+        <a class="trow" style="grid-template-columns:2.2fr 1.4fr 1fr; text-decoration:none; color:inherit;" href="{{ url_for('owner.company_detail', org_id=r.org.id) }}">
+          <div style="min-width:0;">
+            <div class="nowrap" style="font-weight:700; font-size:13.5px;">{{ r.org.name }}{% if r.org.is_demo %} <span class="tag" style="color:var(--accent); background:var(--purple-150); font-size:10px;">{{ _('demo') }}</span>{% endif %}</div>
+            <div class="nowrap" style="font-size:12px; color:var(--muted);">{{ r.org.slug }} · {% trans count=r.users %}{{ count }} gebr.{% endtrans %} · {% trans count=r.mailboxes %}{{ count }} postvak(ken){% endtrans %}</div>
+          </div>
+          <div class="nowrap" style="font-size:12.5px; color:var(--text-2);">{{ r.org.owner.email if r.org.owner else '—' }}</div>
+          <div><span class="status-pill" style="color:{{ st[1] }}; background:{{ st[2] }};">{{ st[0] }}</span></div>
+        </a>
+      {% endfor %}
+    </div>
+
+    {% if trash %}
+    <div style="font-size:15px; font-weight:800; margin:28px 0 10px;">{{ _('Prullenbak') }}
+      <span style="font-size:12.5px; color:var(--muted); font-weight:600;">· {{ _('verwijderde omgevingen, herstelbaar tot de wisdatum') }}</span></div>
+    <div class="table">
+      {% for r in trash %}
+        <div class="trow" style="grid-template-columns:2.4fr .8fr .8fr .8fr; align-items:center;">
+          <div style="min-width:0;">
+            <div class="nowrap" style="font-weight:700; font-size:13.5px;">{{ r.org.name }}</div>
+            <div class="nowrap" style="font-size:12px; color:var(--muted);">{{ r.org.slug }}{% if r.org.deleted_at %} · {% trans date=r.org.deleted_at.strftime('%d/%m/%Y') %}verwijderd {{ date }}{% endtrans %}{% endif %}{% if r.purge_on %} · <span style="color:var(--danger, #EB5757);">{% trans date=r.purge_on.strftime('%d/%m/%Y') %}definitief weg op {{ date }}{% endtrans %}</span>{% endif %}</div>
+          </div>
+          <a class="btn btn-secondary btn-sm" href="{{ url_for('owner.company_detail', org_id=r.org.id) }}">{{ _('Bekijken') }}</a>
+          <form method="post" action="{{ url_for('owner.restore_company', org_id=r.org.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-ghost btn-sm">{{ _('Herstellen') }}</button>
+          </form>
+          <form method="post" action="{{ url_for('owner.destroy_company', org_id=r.org.id) }}"
+                data-confirm-destroy data-slug="{{ r.org.slug }}" data-name="{{ r.org.name }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="confirm" value="">
+            <button class="btn btn-ghost btn-sm" style="color:var(--danger, #EB5757);">{{ _('Definitief verwijderen') }}</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+    <script nonce="{{ csp_nonce }}">
+      // Permanent delete requires typing the exact slug — a deliberate, unrecoverable action.
+      document.querySelectorAll('form[data-confirm-destroy]').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+          var slug = form.dataset.slug, name = form.dataset.name;
+          var typed = window.prompt(
+            T('Definitief verwijderen van "{name}" kan NIET ongedaan worden gemaakt. Typ exact de slug om te bevestigen: {slug}')
+              .replace('{name}', name).replace('{slug}', '\n\n' + slug));
+          if (typed === null) { e.preventDefault(); return; }
+          if (typed.trim() !== slug) { e.preventDefault(); alert(T('De slug klopt niet — geannuleerd.')); return; }
+          form.querySelector('input[name="confirm"]').value = typed.trim();
+        });
+      });
+    </script>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

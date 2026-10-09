@@ -1,0 +1,19 @@
+{# Reusable UI-language switcher. Uses <details> so it works without JS.
+   Links to public.set_language, which stores the choice in a cookie and
+   returns to the current page (?next=). `current_locale`, `languages` and
+   `language_names` come from the global context processor. #}
+<details class="lang-switch">
+  <summary aria-label="{{ _('Taal kiezen') }}" title="{{ _('Taal kiezen') }}">
+    <span class="lang-globe" aria-hidden="true">🌐</span>
+    <span class="lang-current">{{ current_locale|upper }}</span>
+  </summary>
+  <div class="lang-menu" role="menu">
+    {% for code in languages %}
+      <a role="menuitem" href="{{ url_for('public.set_language', code=code, next=request.full_path) }}"
+         class="lang-opt{% if code == current_locale %} is-active{% endif %}"
+         {% if code == current_locale %}aria-current="true"{% endif %}>
+        {{ language_names.get(code, code|upper) }}
+      </a>
+    {% endfor %}
+  </div>
+</details>

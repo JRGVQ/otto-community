@@ -1,0 +1,107 @@
+{% extends "owner/layout.html" %}
+{% block title %}{% trans org=org.name %}Platform — {{ org }}{% endtrans %}{% endblock %}
+{% set sm = {'active':(_('Actief'),'#1F8A5B','#EAF7F0'),'suspended':(_('Geschorst'),'#EB5757','#FDECEC'),'geen':(_('Geen'),'#9AA4B2','#F2F2F7')} %}
+{% set st = sm.get(row.status, sm['geen']) %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:820px;">
+    <a href="{{ url_for('owner.companies') }}" style="font-size:13px; color:var(--muted);">← {{ _('Bedrijven') }}</a>
+    <div style="display:flex; align-items:center; gap:12px; margin:8px 0 4px;">
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ org.name }}</div>
+      <span class="status-pill" style="color:{{ st[1] }}; background:{{ st[2] }};">{{ st[0] }}</span>
+      {% if org.is_demo %}<span class="tag" style="color:var(--accent); background:var(--purple-150);">{{ _('demo') }}</span>{% endif %}
+    </div>
+    <div class="page-sub">{{ _('Omgeving') }} <strong>{{ org.slug }}</strong> · {% trans email=org.owner.email if org.owner else '—' %}eigenaar {{ email }}{% endtrans %}</div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:13px; margin-bottom:20px;">
+      <div class="card card-14" style="padding:16px;"><div style="font-size:23px; font-weight:800; color:#2D9CDB;">{{ row.users }}</div><div style="font-size:12px; color:var(--muted);">{{ _('Gebruikers') }}</div></div>
+      <div class="card card-14" style="padding:16px;"><div style="font-size:23px; font-weight:800; color:#0078D4;">{{ row.mailboxes }}</div><div style="font-size:12px; color:var(--muted);">{{ _('Postvakken') }}</div></div>
+      <div class="card card-14" style="padding:16px;"><div style="font-size:23px; font-weight:800; color:#27AE60;">{{ row.messages }}</div><div style="font-size:12px; color:var(--muted);">{{ _('Berichten') }}</div></div>
+    </div>
+
+    {# Access: active / suspended #}
+    <div class="card card-18" style="padding:22px; margin-bottom:18px;">
+      <div style="font-size:15px; font-weight:800; margin-bottom:6px;">{{ _('Toegang') }}</div>
+      <div class="page-sub" style="margin-bottom:12px;">{{ _('Een geschorste organisatie blijft bewaard, maar niemand in die organisatie kan nog aanmelden.') }}</div>
+      <div style="display:flex; gap:8px;">
+        {% if row.status == 'suspended' %}
+        <form method="post" action="{{ url_for('owner.set_status', org_id=org.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="activate">
+          <button class="btn btn-ghost btn-sm" style="color:var(--success-text); border-color:var(--success-border);">{{ _('Activeren') }}</button>
+        </form>
+        {% else %}
+        <form method="post" action="{{ url_for('owner.set_status', org_id=org.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="suspend">
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger);">{{ _('Schorsen') }}</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('owner.impersonate', org_id=org.id) }}" style="margin-left:auto;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost btn-sm" title="{{ _('Stap in deze omgeving als beheerder') }}">{{ _('Impersoneren ↗') }}</button>
+        </form>
+      </div>
+    </div>
+
+    {# Users in this company #}
+    <div style="font-size:15px; font-weight:800; margin-bottom:12px;">{{ _('Gebruikers') }}</div>
+    <div class="table">
+      {% for u in users %}
+        <div class="sys-row">
+          <div class="avatar avatar-34" style="background:{{ u.avatar_color }};">{{ u.initials }}</div>
+          <div style="flex:1; min-width:0;">
+            <div class="nowrap" style="font-size:13.5px; font-weight:700;">{{ u.name }}{% if u.is_platform_owner %} <span class="tag" style="color:#221C33; background:var(--surface-2);">{{ _('platform') }}</span>{% endif %}</div>
+            <div class="nowrap" style="font-size:12px; color:var(--muted);">{{ u.email }}</div>
+          </div>
+          <span style="font-size:12.5px; color:var(--text-2);">{{ u.role_name }}</span>
+        </div>
+      {% endfor %}
+    </div>
+
+    {# Environment lifecycle — soft delete / restore / permanent delete #}
+    <div class="card card-18" style="padding:22px; margin-top:20px; border-color:var(--danger-soft);">
+      <div style="font-size:15px; font-weight:800; margin-bottom:6px;">{{ _('Omgeving') }}</div>
+      {% if org.deleted_at %}
+        <div class="page-sub" style="margin-bottom:12px;">{% trans date=org.deleted_at.strftime('%d/%m/%Y') %}In de prullenbak sinds {{ date }} — gebruikers hebben geen toegang.{% endtrans %}</div>
+        <div style="display:flex; gap:8px;">
+          <form method="post" action="{{ url_for('owner.restore_company', org_id=org.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-secondary btn-sm">{{ _('Herstellen') }}</button>
+          </form>
+          <form method="post" action="{{ url_for('owner.destroy_company', org_id=org.id) }}"
+                data-confirm="Definitief verwijderen? Dit kan niet ongedaan gemaakt worden.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-ghost btn-sm" style="color:var(--danger);">{{ _('Definitief verwijderen') }}</button>
+          </form>
+        </div>
+      {% else %}
+        <div class="page-sub" style="margin-bottom:12px;">{{ _('Naar de prullenbak verplaatsen — gebruikers verliezen toegang, maar je kan later herstellen.') }}</div>
+        <form method="post" action="{{ url_for('owner.delete_company', org_id=org.id) }}"
+              data-confirm="Omgeving naar de prullenbak verplaatsen?">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger);">{{ _('Verwijderen') }}</button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="card card-18" style="padding:22px; margin-top:16px;">
+      <div style="display:flex; align-items:center; margin-bottom:4px;">
+        <div style="font-size:16px; font-weight:800; flex:1;">{{ _('Gebeurtenissen') }}</div>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('owner.events', org=org.id) }}">{{ _('Alles bekijken') }}</a>
+      </div>
+      <div class="page-sub" style="margin-bottom:12px;">{{ _('De zakelijke tijdlijn van deze omgeving — geen mailboxinhoud.') }}</div>
+      {% if not events %}
+        <div style="font-size:13px; color:var(--muted);">{{ _('Nog geen gebeurtenissen geregistreerd.') }}</div>
+      {% else %}
+        {% for e in events %}
+          <div style="display:flex; gap:12px; padding:8px 0; border-top:1px solid var(--border); font-size:12.5px;">
+            <div style="color:var(--muted-2); white-space:nowrap; min-width:92px;">{{ e.occurred_at.strftime('%d/%m %H:%M') if e.occurred_at }}</div>
+            <div style="font-weight:700; color:var(--text-2); min-width:190px;">{{ _(label_for(e.event)) }}</div>
+            <div style="color:var(--muted); flex:1;">{{ e.detail or '' }}</div>
+            <div style="color:var(--muted);">{{ e.actor or '' }}</div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

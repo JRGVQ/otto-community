@@ -1,0 +1,58 @@
+{# Regelbouwer — verborgen tot rules.js hem opent.
+
+   Bewust rij voor rij in plaats van de vroegere lijst met een vinkje per mogelijke
+   voorwaarde: je kiest wat je nodig hebt en ziet alleen dát. Wie één regel wil, krijgt
+   één regel op zijn scherm en geen tien uitgegrijsde velden. #}
+<div id="rule-modal" class="modal-overlay" style="display:none;">
+  <div class="modal pop" data-stop-propagation style="max-width:640px;">
+    <div style="font-size:19px; font-weight:800; letter-spacing:-.01em; margin-bottom:4px;">{{ _('Nieuwe regel') }}</div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:18px;">
+      {{ _('Deze regel draait in Outlook zelf, dus ook wanneer Otto stilstaat.') }}
+    </div>
+
+    <div class="label">{{ _('Naam') }}</div>
+    <input id="rule-name" class="input" style="margin-bottom:18px;"
+           placeholder="{{ _('bv. Facturen naar Boekhouding') }}">
+
+    <div style="display:flex; align-items:center; margin-bottom:8px;">
+      <div class="label" style="flex:1; margin:0;">{{ _('Als…') }}</div>
+      <div id="rule-add-cond" style="font-size:12px; font-weight:700; color:var(--accent); cursor:pointer;">{{ _('+ Voorwaarde') }}</div>
+    </div>
+    <div id="rule-conds" style="display:flex; flex-direction:column; gap:8px; margin-bottom:6px;"></div>
+    <div id="rule-conds-empty" style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">
+      {{ _('Zonder voorwaarde geldt de regel voor élke binnenkomende mail.') }}
+    </div>
+
+    <div style="display:flex; align-items:center; margin:12px 0 8px;">
+      <div class="label" style="flex:1; margin:0;">{{ _('Dan…') }}</div>
+      <div id="rule-add-act" style="font-size:12px; font-weight:700; color:var(--accent); cursor:pointer;">{{ _('+ Actie') }}</div>
+    </div>
+    <div id="rule-acts" style="display:flex; flex-direction:column; gap:8px; margin-bottom:6px;"></div>
+    <div id="rule-acts-empty" style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">
+      {{ _('Kies minstens één actie — anders doet de regel niets.') }}
+    </div>
+
+    <div id="rule-warning" class="alert alert-error" style="display:none; margin-bottom:14px;">
+      {{ _('Let op: deze regel verwijdert mail automatisch. Outlook voert dat uit zonder tussenkomst.') }}
+    </div>
+
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span class="spacer" style="flex:1;"></span>
+      <button id="rule-cancel" class="btn btn-ghost">{{ _('Annuleren') }}</button>
+      <button id="rule-save" class="btn btn-primary">{{ _('Regel toevoegen') }}</button>
+    </div>
+  </div>
+</div>
+
+{# Eén rij: keuze links, waarde rechts. JS vult het waardeveld naargelang het soort. #}
+<template id="rule-row-template">
+  <div class="rule-row" style="display:flex; gap:8px; align-items:center;">
+    <select class="input rule-row-key" style="flex:1; height:38px;"></select>
+    <span class="rule-row-value" style="flex:1.2; display:flex;"></span>
+    <div class="rule-row-remove" title="{{ _('Verwijderen') }}"
+         style="width:32px; height:32px; border-radius:8px; flex:none; display:flex; align-items:center; justify-content:center; color:var(--danger-soft); font-size:16px; cursor:pointer; background:var(--surface); border:1px solid var(--border);">×</div>
+  </div>
+</template>
+
+{# De catalogus als data-attribuut: geen inline script, dus ook geen CSP-nonce nodig. #}
+<div id="rule-catalog" data-catalog='{{ rule_catalog|tojson }}' hidden></div>

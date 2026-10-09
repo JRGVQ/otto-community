@@ -1,0 +1,21 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Inbox & triage') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Inbox & triage') }}</h1>
+<div class="sub">{{ _('Otto sorteert je inkomende mail automatisch en zet — waar nodig — een concept klaar.') }}</div>
+
+<h2>{{ _('Hoe het werkt') }}</h2>
+<p>{{ _('Elke binnenkomende mail loopt door dezelfde keten:') }} <strong>{{ _('sorteren → (indien nodig) concept klaarzetten → stoppen') }}</strong>. {{ _('Otto verzendt nooit zelf — jij houdt altijd het laatste woord.') }}</p>
+
+<h2>{{ _('De drie kolommen') }}</h2>
+<ul>
+  <li><strong>{{ _('Categorieën') }}</strong> {{ _('(links) — filter je inbox per categorie; het getal toont hoeveel mails erin zitten.') }}</li>
+  <li><strong>{{ _('Berichtenlijst') }}</strong> {{ _('(midden) — je mail, met een label per categorie en de tijd van ontvangst.') }}</li>
+  <li><strong>{{ _('Leespaneel') }}</strong> {{ _("(rechts) — het bericht, Otto's concept-antwoord, interne notities en de map-suggestie.") }}</li>
+</ul>
+
+<h2>{{ _('Outlook-stijl') }}</h2>
+<p>{{ _('Liever een klassieke mappenweergave? Klik bovenaan je Inbox op') }} <strong>{{ _('Outlook-stijl') }}</strong> {{ _('voor een vertrouwde indeling — het is dezelfde mailbox, andere weergave.') }}</p>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('categorieen') }}">{{ _('Volgende: Categorieën →') }}</a></p>
+{% endblock %}

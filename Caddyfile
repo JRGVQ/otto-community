@@ -1,0 +1,14 @@
+# Bundled reverse proxy for `docker compose --profile caddy`.
+# Caddy obtains and renews the HTTPS certificate for {$OTTO_DOMAIN} automatically
+# (the domain's DNS must point at this server and ports 80/443 must be reachable).
+
+{$OTTO_DOMAIN} {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	encode gzip
+	reverse_proxy web:8000
+}

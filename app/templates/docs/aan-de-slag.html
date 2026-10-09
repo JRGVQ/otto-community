@@ -1,0 +1,29 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Aan de slag') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Aan de slag') }}</h1>
+<div class="sub">{{ _('In een paar minuten van je eerste aanmelding tot een werkende, opgeruimde inbox.') }}</div>
+
+<h2>{{ _('1. Je account') }}</h2>
+<ol class="steps-num">
+  <li>{{ _('Op een nieuwe installatie maakt de eerste bezoeker de eerste organisatie aan en wordt zo de beheerder. Daarna maakt de beheerder organisaties aan, en nodigen eigenaars hun collega’s uit.') }}</li>
+  <li>{{ _('Kreeg je een') }} <strong>{{ _('uitnodiging') }}</strong>{{ _('? Klik op de link in de mail en kies je wachtwoord.') }}</li>
+  <li>{{ _('Je komt binnen in een') }} <strong>{{ _('lege') }}</strong> {{ _('omgeving — geen demodata, alles van jou.') }}</li>
+</ol>
+<div class="note">{{ _('Je omgeving staat volledig los van die van andere bedrijven: eigen gebruikers, categorieën, instellingen en data.') }}</div>
+
+<h2>{{ _('2. Doorloop de setup-checklist') }}</h2>
+<p>{{ _('Bij je eerste login krijg je een korte checklist. De belangrijkste stap is je') }} <a href="{{ docs_url('mailbox') }}">{{ _('mailbox koppelen') }}</a> — {{ _('dan begint Otto te sorteren en concepten te schrijven. Je kan ook eerst rondkijken en later koppelen.') }}</p>
+
+<h2>{{ _('3. Wat Otto doet') }}</h2>
+<ul>
+  <li><strong>{{ _('Sorteren:') }}</strong> {{ _('elke binnenkomende mail belandt automatisch in een categorie (te beantwoorden, FYI, nieuwsbrief, meldingen, spam) — volledig aanpasbaar.') }}</li>
+  <li><strong>{{ _('Concepten:') }}</strong> {{ _('voor mails die een antwoord vragen schrijft Otto een concept in jouw stijl en toon. Jij leest na en verzendt.') }}</li>
+  <li><strong>{{ _('Taken:') }}</strong> {{ _('actiepunten worden taken met een link naar de mail.') }}</li>
+</ul>
+
+<h2>{{ _('Rollen') }}</h2>
+<p>{{ _('Wie een organisatie aanmaakt, is er') }} <strong>{{ _('Eigenaar') }}</strong> {{ _('van en kan de geavanceerde instellingen beheren (eigen app, SSO). Medewerkers voeg je later toe of ze komen via') }} <a href="{{ docs_url('sso') }}">SSO</a> {{ _('binnen.') }}</p>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('mailbox') }}">{{ _('Volgende: Mailbox koppelen →') }}</a></p>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Overzicht') }} — {{ _('Beheer') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:1000px;">
+    <div style="font-size:13px; font-weight:700; color:var(--muted);">{{ _('Beheer') }} · {{ me.organization.name }}</div>
+    <div style="font-size:28px; font-weight:800; letter-spacing:-.025em; margin:3px 0 22px;">{{ _('Overzicht') }}</div>
+
+    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:13px; margin-bottom:28px;">
+      {% for s in org_stats %}
+        <div class="card card-14" style="padding:16px 16px 14px;">
+          <div style="font-size:23px; font-weight:800; letter-spacing:-.02em; color:{{ s.color }};">{{ s.value }}</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:3px; line-height:1.35;">{{ s.label }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div style="font-size:15px; font-weight:800; margin-bottom:12px;">{{ _('Systeemstatus') }}</div>
+    <div class="table">
+      {% for x in sys_status %}
+        <div class="sys-row">
+          <div class="dot-9" style="border-radius:50%; background:{{ '#27AE60' if x.ok else '#EB5757' }};"></div>
+          <div style="flex:1;">
+            <div style="font-size:14px; font-weight:700;">{{ x.name }}</div>
+            <div style="font-size:12px; color:var(--muted);">{{ x.detail }}</div>
+          </div>
+          <span class="tag" style="font-size:11px; padding:3px 9px; color:{{ '#1F8A5B' if x.ok else '#EB5757' }}; background:{{ '#EAF7F0' if x.ok else '#FDECEC' }};">{{ _('Operationeel') if x.ok else _('Storing') }}</span>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if can_delete_org %}
+    {# ── Gevarenzone: omgeving verwijderen (alleen eigenaar) ───────────────── #}
+    <style>
+      .bf-label{display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:4px;}
+      .bf-in{width:100%; box-sizing:border-box; padding:9px 11px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); font-size:13.5px;}
+    </style>
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat == 'error' %}
+      <div class="alert alert-error" style="margin-top:24px;">{{ m }}</div>
+    {% endfor %}
+    <div class="card" style="padding:22px; margin-top:32px; border:1px solid var(--danger, #EB5757);">
+      <div style="font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--danger, #EB5757);">{{ _('Gevarenzone') }}</div>
+      <div style="font-size:15px; font-weight:700; margin-top:6px;">{{ _('Omgeving verwijderen') }}</div>
+      <div style="font-size:13px; color:var(--muted); margin-top:6px; line-height:1.55;">
+        {% trans name=org.name, days=trash_days %}Dit verwijdert de omgeving van <strong>{{ name }}</strong> voor iedereen. De gegevens blijven nog {{ days }} dagen bewaard (de beheerder van deze installatie kan ze terugzetten), daarna worden ze definitief gewist.{% endtrans %}
+      </div>
+      <form method="post" action="{{ url_for('web.account_delete') }}" style="margin-top:16px; max-width:420px;"
+            data-confirm-delete data-name="{{ org.name }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="bf-label">{{ _('Typ de bedrijfsnaam om te bevestigen') }}</label>
+        <input class="bf-in" name="confirm_name" autocomplete="off" placeholder="{{ org.name }}" style="margin-bottom:12px;">
+        <label class="bf-label">{{ _('Je wachtwoord') }}</label>
+        <input class="bf-in" type="password" name="password" autocomplete="current-password" style="margin-bottom:14px;">
+        <button class="btn" style="background:var(--danger, #EB5757); color:#fff; border:none;">{{ _('Omgeving definitief verwijderen') }}</button>
+      </form>
+    </div>
+    <script nonce="{{ csp_nonce }}">
+      (function () {
+        var form = document.querySelector('form[data-confirm-delete]');
+        if (!form) return;
+        form.addEventListener('submit', function (e) {
+          var name = form.dataset.name;
+          if (form.querySelector('[name="confirm_name"]').value.trim() !== name) {
+            e.preventDefault();
+            alert(T('Typ exact "{name}" om te bevestigen.').replace('{name}', name));
+            return;
+          }
+          if (!window.confirm(T('Weet je zeker dat je de omgeving van "{name}" wilt verwijderen? Iedereen verliest toegang.').replace('{name}', name))) {
+            e.preventDefault();
+          }
+        });
+      })();
+    </script>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

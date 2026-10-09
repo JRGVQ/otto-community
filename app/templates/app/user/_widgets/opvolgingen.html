@@ -1,0 +1,16 @@
+{# Verzonden mails die op antwoord wachten — met herinnering-concept klaar. #}
+<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:{{ '14px' if w.data.oldest else '0' }};">
+  <div><div style="font-size:24px; font-weight:800; color:#F2994A;">{{ w.data.open }}</div><div style="font-size:12px; color:var(--muted);">{{ _('wachten op antwoord') }}</div></div>
+  <div><div style="font-size:24px; font-weight:800;">{{ w.data.avg_wait ~ ' d' if w.data.avg_wait is not none else '—' }}</div><div style="font-size:12px; color:var(--muted);">{{ _('gem. al onbeantwoord') }}</div></div>
+</div>
+{% if w.data.oldest %}
+  <div style="display:flex; flex-direction:column; gap:6px;">
+    {% for f in w.data.oldest %}
+      <div style="display:flex; gap:10px; font-size:13px; min-width:0;">
+        <span class="nowrap" style="flex:1; font-weight:600;">{{ f.subject }}</span>
+        {% if f.days is not none %}<span style="color:var(--muted); flex:none;">{% trans days=f.days %}{{ days }} d{% endtrans %}</span>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  <a href="{{ url_for('web.follow_ups') }}" style="display:inline-block; margin-top:10px; font-size:12px; font-weight:700; color:var(--accent);">{{ _('Naar opvolgingen') }} →</a>
+{% endif %}

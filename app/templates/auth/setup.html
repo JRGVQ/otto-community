@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Installatie') }} — Otto{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="logo-badge"><div class="core"></div></div>
+      <div class="name">Otto</div>
+    </div>
+    <div class="auth-box">
+      <div style="font-size:24px; font-weight:800; letter-spacing:-.02em; margin-bottom:6px;">{{ _('Welkom bij Otto') }}</div>
+      <div style="font-size:14px; color:var(--text-2); line-height:1.55; margin-bottom:22px;">{{ _('Deze installatie is nog leeg. Maak de eerste organisatie aan — jouw account wordt ook de beheerder van deze Otto-installatie.') }}</div>
+
+      {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['error','info'] %}
+        <div class="alert alert-{{ cat }}">{{ m }}</div>
+      {% endfor %}
+
+      <form method="post" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="label">{{ _('Bedrijfsnaam') }}</div>
+        {{ form.company(class="input", placeholder=_('Jouw bedrijf'), autocomplete="organization") }}
+        {% for e in form.company.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+
+        <div class="label" style="margin-top:16px;">{{ _('Naam') }}</div>
+        {{ form.name(class="input", placeholder=_('Sam Verlinden'), autocomplete="name") }}
+        {% for e in form.name.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+
+        <div class="label" style="margin-top:16px;">{{ _('E-mailadres') }}</div>
+        {{ form.email(class="input", type="email", placeholder=_('jij@bedrijf.be'), autocomplete="email", autocapitalize="none", autocorrect="off", spellcheck="false") }}
+        {% for e in form.email.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+
+        <div class="label" style="margin-top:16px;">{{ _('Wachtwoord') }}</div>
+        {{ form.password(class="input", placeholder=_('Minstens 6 tekens'), autocomplete="new-password") }}
+        {% for e in form.password.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+
+        <div class="label" style="margin-top:16px;">{{ _('Bevestig wachtwoord') }}</div>
+        {{ form.confirm(class="input", placeholder="••••••••", autocomplete="new-password") }}
+        {% for e in form.confirm.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+
+        <button type="submit" class="btn btn-primary" style="width:100%; height:46px; margin-top:20px; font-size:15px;">{{ _('Installatie voltooien') }} →</button>
+      </form>
+      <div class="principle" style="margin-top:18px;">
+        <div class="dot" style="background:var(--accent); margin-top:6px;"></div>
+        <div style="font-size:12.5px; color:var(--text-2); line-height:1.5;"><strong style="color:var(--heading-dark);">{{ _('Otto verzendt nooit zelf.') }}</strong> {{ _('Hij maakt enkel concepten — jij houdt de controle.') }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

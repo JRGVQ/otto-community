@@ -1,0 +1,45 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Profiel') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:720px;">
+    <div style="display:flex; align-items:center; gap:14px; margin-bottom:4px;">
+      <div class="avatar avatar-42" style="background:{{ me.avatar_color }};">{{ me.initials }}</div>
+      <div>
+        <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ me.name }}</div>
+        <div style="font-size:13px; color:var(--muted);">{{ me.email }}{% if me.organization %} · {{ me.organization.name }}{% endif %}</div>
+      </div>
+    </div>
+    <div class="page-sub">{{ _('Stel in hoe Otto namens jou antwoordt. Deze instructies worden bij') }} <strong>{{ _('elk concept') }}</strong> {{ _('toegepast.') }}</div>
+
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['toast','info','error'] %}
+      <div class="alert alert-{{ 'error' if cat=='error' else 'info' }}">{{ m }}</div>
+    {% endfor %}
+
+    <form method="post" action="{{ url_for('web.profile') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="card" style="padding:22px; margin-top:8px;">
+        <label class="lbl" style="font-size:14px; font-weight:800;">{{ _('Hoe Otto moet antwoorden') }}</label>
+        <div style="font-size:12.5px; color:var(--muted); margin:4px 0 10px;">
+          {{ _('Beschrijf je stijl en regels in gewone taal — wat Otto wél en niet moet doen.') }}
+        </div>
+        <textarea class="textarea" name="default_reply" rows="6"
+          placeholder="{{ default_example }}">{{ (style.default_reply if style and style.default_reply else default_example) }}</textarea>
+        <div style="font-size:12px; color:var(--muted-3); margin-top:8px;">
+          {{ _('Voorbeeld:') }} <em>{{ default_example }}</em>
+        </div>
+      </div>
+
+      <div class="card" style="padding:22px; margin-top:16px;">
+        <label class="lbl" style="font-size:14px; font-weight:800;">{{ _('Handtekening') }}</label>
+        <div style="font-size:12.5px; color:var(--muted); margin:4px 0 10px;">{{ _('Komt onderaan je concepten.') }}</div>
+        <textarea class="textarea" name="signature" rows="3"
+          placeholder="{{ _('Met vriendelijke groet,') }}&#10;{{ me.name }}">{{ style.signature if style and style.signature else '' }}</textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="height:44px; margin-top:18px;">{{ _('Profiel opslaan') }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

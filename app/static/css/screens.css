@@ -1,0 +1,602 @@
+/* Screen layouts — top bar, sidebar, and each of the 16 screens. */
+
+/* ── Top bar ───────────────────────────────────────────────────────────── */
+.topbar { height: var(--topbar-h); flex: none; background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 22px; gap: 18px; }
+.topbar .brand { display: flex; align-items: center; gap: 10px; flex: none; margin-right: 6px; }
+.topbar .brand .logo-badge { width: 30px; height: 30px; border-radius: 9px; }
+.topbar .brand .logo-badge .core { width: 10px; height: 10px; }
+.topbar .brand .name { font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.topbar .search { flex: 1; max-width: 440px; }
+.topbar .user-meta { text-align: right; line-height: 1.2; }
+.topbar .user-meta .nm { font-size: 13px; font-weight: 700; }
+.topbar .user-meta .sub { font-size: 11.5px; color: var(--muted); }
+
+.body-row { flex: 1; min-height: 0; display: flex; }
+
+/* ── Navigatie in de topbar (desktop) ──────────────────────────────────────
+   Eén balk: merk → werkomgeving-wissel → navigatie (losse links + twee
+   dropdown-knoppen met categorie-koppen in het menu) → hulp → profiel.
+   Vervangt op brede schermen de zijbalk + werkomgeving-strip; op mobiel doet
+   de hamburger + off-canvas zijbalk het werk en verdwijnen deze onderdelen. */
+.tb-ws, .tb-help { display: flex; gap: 4px; flex: none; }
+/* Géén overflow op de nav: een overflow-container zou de open dropdown-menu's
+   afkappen, en met twee knoppen per werkomgeving past hij altijd. */
+.tb-nav { display: flex; align-items: center; gap: 2px; flex: none; }
+.tn-ws-item { width: 32px; height: 32px; border-radius: 999px; display: flex; align-items: center;
+  justify-content: center; color: var(--muted); transition: all .14s; }
+.tn-ws-item:hover { background: var(--bg); color: var(--text-2); }
+.tn-ws-item.active { background: var(--accent); color: #fff; }
+.tn-sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; flex: none; }
+.tn-item { display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; color: var(--text-3); white-space: nowrap; cursor: pointer;
+  text-decoration: none; transition: all .14s; flex: none; }
+.tn-item:hover { background: var(--bg); }
+.tn-item.active { background: var(--accent); color: #fff; font-weight: 700; }
+.tn-item.active .nav-badge { background: var(--on-accent); color: var(--accent); }
+.tn-drop { position: relative; flex: none; }
+.tn-drop summary { list-style: none; }
+.tn-drop summary::-webkit-details-marker { display: none; }
+.tn-drop summary .nav-ico { transition: transform .16s; opacity: .7; }
+.tn-drop[open] summary .nav-ico { transform: rotate(180deg); }
+.tn-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; min-width: 235px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, .16); padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.tn-menu-head { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted-3); padding: 9px 11px 3px; }
+.tn-menu-item { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 9px;
+  font-size: 13.5px; font-weight: 600; color: var(--text-3); text-decoration: none; }
+.tn-menu-item:hover { background: var(--bg); }
+.tn-menu-item.active { background: var(--accent); color: #fff; }
+.tn-menu-item.active .nav-badge { background: var(--on-accent); color: var(--accent); }
+
+/* ── Mega-menu (Velt-stijl): kolommen met icoon-tegels + één regel uitleg ── */
+.tn-mega { position: absolute; top: calc(100% + 8px); left: 0; z-index: 60;
+  display: grid; grid-template-columns: repeat(var(--mega-cols, 1), minmax(250px, 1fr));
+  gap: 4px 18px; padding: 12px; min-width: 300px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, .22); backdrop-filter: blur(14px); }
+.tn-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tn-mega-item { display: flex; align-items: flex-start; gap: 11px; padding: 9px 10px;
+  border-radius: 11px; text-decoration: none; color: var(--text-3); transition: background .12s; }
+.tn-mega-item:hover { background: var(--bg); }
+.tn-mega-item.active { background: var(--purple-100); }
+.tn-mega-item.active .tn-lbl { color: var(--accent); }
+.tn-ico { width: 30px; height: 30px; flex: none; border-radius: 9px; display: flex;
+  align-items: center; justify-content: center; background: var(--surface-2);
+  border: 1px solid var(--border); color: var(--accent); }
+.tn-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tn-lbl { font-size: 13.5px; font-weight: 700; color: var(--text-2); white-space: nowrap;
+  display: flex; align-items: center; gap: 7px; }
+.tn-lbl .nav-badge { display: inline-flex; flex: none; }
+.tn-desc { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.tn-lock { font-size: 10px; font-weight: 800; letter-spacing: .04em; padding: 2px 8px;
+  border-radius: 999px; background: var(--purple-100); color: var(--accent); white-space: nowrap; }
+/* Teams-subnavigatie: per gedeelde mailbox de drie subpagina's als chips. */
+.tn-mega-teams { min-width: 300px; }
+.tn-team { border-top: 1px solid var(--divider); margin-top: 4px; padding-top: 4px; }
+.tn-sub { display: flex; gap: 6px; padding: 2px 10px 8px 51px; flex-wrap: wrap; }
+.tn-sub a { font-size: 11.5px; font-weight: 700; color: var(--muted); text-decoration: none;
+  padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border); transition: all .12s; }
+.tn-sub a:hover { color: var(--accent); border-color: var(--accent); background: var(--purple-50); }
+.tn-note { font-size: 12.5px; color: var(--muted); line-height: 1.55; padding: 10px 12px; max-width: 280px; }
+.tn-note a { color: var(--accent); font-weight: 700; text-decoration: none; display: inline-block; margin-top: 6px; }
+
+@media (min-width: 861px) {
+  /* De zijbalk en de strip zijn vervangen door de topbar-navigatie; hun markup
+     blijft bestaan voor de mobiele off-canvas lade. Alleen in de app (.app-shell):
+     de owner-backoffice gebruikt óók .sidebar en houdt de zijne gewoon. */
+  .app-shell .ws-rail, .app-shell .sidebar,
+  .app-shell .col-resizer[data-resize="sidebar"], .app-shell .nav-toggle { display: none !important; }
+}
+@media (max-width: 1200px) {
+  /* Krap: de hulp-iconen en de verbonden-pill wijken (Support/Documentatie
+     blijven via de mobiele lade en Instellingen bereikbaar). */
+  .tb-help, .pill-connected { display: none; }
+  .tn-item { padding: 7px 8px; }
+  .topbar .user-meta { display: none; }
+}
+@media (max-width: 860px) {
+  .tb-ws, .tb-nav, .tb-help, .tb-desktop { display: none; }
+  /* De bouwwijze-switch van de handtekening-builder is géén inbox-viewswitch. */
+  #sig-modes { display: flex; }
+}
+
+/* ── Werkomgeving-strip ────────────────────────────────────────────────────
+   Alleen iconen: hij moet smal blijven, want hij staat naast de zijbalk en niet
+   in de plaats ervan. De naam staat in de title, zodat hovering hem alsnog geeft. */
+.ws-rail { width: 56px; flex: none; background: var(--surface-2); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; padding: 14px 0 12px; gap: 6px; }
+.ws-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ws-spacer { flex: 1; min-height: 12px; }
+.ws-item { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center;
+  justify-content: center; color: var(--muted); transition: all .14s; }
+.ws-item:hover { background: var(--bg); color: var(--text-2); }
+.ws-item.active { background: var(--accent); color: #fff; }
+.ws-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; color: #fff; font-size: 11px; font-weight: 800; margin-top: 4px; }
+
+/* ── Sidebar ───────────────────────────────────────────────────────────── */
+.sidebar { width: var(--sidebar-w); flex: none; background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: 16px 14px; }
+.sidebar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.sidebar-title { font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--muted-3); padding-left: 4px; }
+.sidebar .nav { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; min-height: 0; }
+.nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 11px;
+  font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-3); background: transparent; transition: all .14s; }
+.nav-item:hover { background: var(--bg); }
+.nav-item.active { color: #fff; background: var(--accent); font-weight: 700; }
+.nav-item .lbl { flex: 1; }
+/* Iconen krimpen niet mee als een label lang is, en erven de actieve kleur. */
+.nav-ico { flex: none; opacity: .85; }
+.nav-item.active .nav-ico, .ws-item.active .nav-ico { opacity: 1; }
+.nav-badge { background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; min-width: 20px; height: 20px;
+  padding: 0 6px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.nav-item.active .nav-badge { background: var(--on-accent); color: var(--accent); }
+
+/* Groepskop is een knop: hij vouwt de groep open en dicht. */
+.nav-section { display: flex; align-items: center; justify-content: space-between; width: 100%;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted-3); padding: 13px 12px 4px; background: none; border: 0; cursor: pointer;
+  font-family: inherit; text-align: left; }
+.nav-section:hover { color: var(--text-3); }
+.nav-section .nav-ico { transition: transform .16s; opacity: .7; }
+.nav-section[aria-expanded="false"] .nav-ico { transform: rotate(-90deg); }
+.sidebar .nav .nav-section:first-child { padding-top: 2px; }
+.nav-item[hidden] { display: none; }
+/* Inbox ⇄ Outlook view toggle (two views of the same mailbox). */
+.viewswitch { display: flex; gap: 2px; background: var(--surface-2); border-radius: 10px; padding: 3px; margin-bottom: 10px; }
+.viewswitch a { flex: 1; text-align: center; font-size: 12.5px; font-weight: 700; color: var(--muted);
+  padding: 6px 10px; border-radius: 8px; text-decoration: none; transition: all .14s; }
+.viewswitch a:hover { color: var(--text); }
+.viewswitch a.active { color: var(--heading-dark); background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.side-note { border-radius: 13px; padding: 14px; flex: none; }
+.side-note.user { background: var(--purple-100); }
+.side-note.admin { background: var(--outlook-bg); }
+.side-note .t { font-size: 12.5px; font-weight: 800; margin-bottom: 4px; }
+.side-note.user .t { color: var(--heading-dark); }
+.side-note.admin .t { color: var(--outlook); }
+.side-note .d { font-size: 11.5px; line-height: 1.5; }
+.side-note.user .d { color: var(--text-2); }
+.side-note.admin .d { color: var(--text-2); }
+
+.main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.screen-scroll { flex: 1; overflow-y: auto; padding: 30px 38px 48px; }
+/* Gecentreerd: sinds de zijbalk plaatsmaakte voor de topbar-navigatie krijgt de
+   inhoud de volle breedte — zonder auto-marges hing elk scherm links. */
+.screen-inner { animation: ottoFade .25s ease both; margin-left: auto; margin-right: auto; }
+
+/* Instellingen-achtige schermen: kaarten in twee kolommen op brede schermen
+   (masonry via CSS-kolommen; op smalle schermen valt het vanzelf terug op één). */
+.settings-cols { columns: 2 460px; column-gap: 20px; }
+.settings-cols > * { break-inside: avoid; margin-bottom: 20px; }
+.settings-cols .locked-note { margin-top: 0; }
+
+/* ── Inbox (3 columns) ─────────────────────────────────────────────────── */
+.inbox-cols { flex: 1; min-height: 0; display: flex; }
+.cat-rail { width: var(--rail-w); flex: none; border-right: 1px solid var(--border); background: var(--surface);
+  overflow-y: auto; padding: 18px 14px; }
+.rail-head { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--muted-2); text-transform: uppercase; padding: 0 8px 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.rail-extra { margin-bottom: 12px; }
+.rail-list { display: flex; flex-direction: column; gap: 2px; }
+.mobile-back { display: none; }
+
+/* Key/value rows (Teams settings — read-only fields). */
+.kv-row { display: flex; gap: 16px; }
+.kv-k { width: 210px; flex: none; color: var(--muted); font-size: 12.5px; }
+.kv-v { flex: 1; min-width: 0; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+.rail-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600; cursor: pointer; color: var(--text-3); }
+.rail-item:hover { background: var(--bg); }
+.rail-item.active { color: var(--heading-dark); background: var(--purple-150); font-weight: 700; }
+.rail-item .nm { flex: 1; }
+.rail-item .ct { font-size: 11.5px; font-weight: 700; color: var(--muted-2); flex: none; }
+.rail-item.active .ct { color: var(--accent); }
+.rail-item .dot-r { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+.msg-list { width: var(--list-w); flex: none; border-right: 1px solid var(--border); background: var(--surface); overflow-y: auto; }
+.msg-list-head { position: sticky; top: 0; background: var(--surface); backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--divider-2); padding: 16px 20px 13px; z-index: 1; }
+.msg-list-head .t { font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+.msg-list-head .s { font-size: 12.5px; color: var(--muted); margin-top: 2px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Volgorde omdraaien — een tekstknopje bij de telling, geen keuzelijst: met twee
+   opties kost een dropdown twee klikken waar er één volstaat. */
+.sort-toggle { display: inline-flex; align-items: center; gap: 4px; font-size: 12px;
+  font-weight: 650; color: var(--muted); padding: 2px 6px; border-radius: 7px;
+  text-decoration: none; transition: all .14s; }
+.sort-toggle:hover { color: var(--accent); background: var(--purple-50); }
+
+/* ── Zoeken & filteren ─────────────────────────────────────────────────────
+   Twee vaste regels in plaats van één wikkelende: zoeken op de volle breedte,
+   daaronder de chips. Zo blijft de hoogte gelijk hoeveel filters er ook zijn. */
+.msg-filter { padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 7px;
+  border-bottom: 1px solid var(--divider); }
+.msg-search { position: relative; display: flex; align-items: center; }
+.msg-search > svg { position: absolute; left: 11px; color: var(--muted-3); pointer-events: none; }
+.msg-search input { width: 100%; height: 34px; padding: 0 30px; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  font-size: 13px; font-family: inherit; }
+.msg-search input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+.msg-search input::-webkit-search-cancel-button { display: none; }
+.msg-search-clear { position: absolute; right: 10px; color: var(--muted); font-size: 12px;
+  text-decoration: none; }
+.msg-search-clear:hover { color: var(--text-2); }
+
+/* Eén rij die zijwaarts schuift in plaats van te wikkelen: de balk houdt dan altijd
+   dezelfde hoogte, ook als er filters bijkomen. */
+.chip-row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 1px;
+  /* Vervaagt de rechterrand, zodat een afgesneden chip leest als "er is meer" in
+     plaats van als een fout. Alleen waar de rij ook echt overloopt. */
+  mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent); }
+.chip-row::-webkit-scrollbar { display: none; }
+.chip { display: inline-flex; align-items: center; white-space: nowrap; flex: none;
+  font-size: 11.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px;
+  color: var(--muted); background: var(--bg); border: 1px solid var(--border);
+  cursor: pointer; user-select: none; transition: all .14s; text-decoration: none; }
+.chip:hover { color: var(--text-2); border-color: var(--muted-3); }
+.chip.on { color: var(--accent); background: var(--purple-150); border-color: transparent; }
+/* De checkbox blijft bestaan voor het verzenden, maar de chip zelf toont de staat. */
+.chip input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.chip-clear { color: var(--muted); background: transparent; border-style: dashed; }
+.chip-clear:hover { color: var(--danger); border-color: var(--danger); }
+.msg-row { padding: 14px 18px; border-bottom: 1px solid var(--divider); cursor: pointer;
+  border-left: 3px solid transparent; display: block; }
+.msg-row:hover { background: var(--purple-50); }
+.msg-row.active { background: var(--purple-tint); border-left-color: var(--accent); }
+.msg-row .sender { font-size: 14px; font-weight: 700; color: var(--text); }
+.msg-row.unread .sender { font-weight: 800; }
+.msg-row .subj { font-size: 13px; font-weight: 600; color: var(--body-text-2); margin: 2px 0 1px; }
+.msg-row.unread .subj { font-weight: 700; }
+.msg-row .snip { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.msg-row .time { font-size: 11.5px; color: var(--muted-2); flex: none; }
+.unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; margin-top: 4px; }
+
+.reading { flex: 1; min-width: 0; overflow-y: auto; background: var(--bg); }
+.reading-inner { padding: 26px 30px 40px; max-width: 760px; }
+
+/* ── Resizable + collapsible panels (drag the bars; ‹ collapses, › re-opens) ── */
+.col-resizer { flex: none; width: 7px; cursor: col-resize; position: relative; z-index: 6; background: transparent; }
+.col-resizer::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 1px; background: var(--border); transition: background .12s, width .12s; }
+.col-resizer:hover::before, .col-resizer.dragging::before { background: var(--accent); width: 3px; }
+.col-toggle { flex: none; width: 22px; height: 22px; padding: 0; border: none; border-radius: 6px; background: transparent;
+  color: var(--muted); cursor: pointer; font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.col-toggle:hover { background: var(--bg); color: var(--text); }
+.panel-expand { display: none; width: 100%; min-height: 46px; border: none; background: var(--surface); color: var(--muted);
+  cursor: pointer; align-items: flex-start; justify-content: center; padding-top: 14px; font-size: 15px; }
+.panel-expand:hover { color: var(--accent); background: var(--bg); }
+@media (min-width: 861px) {
+  .otto-shell.collapsed-sidebar { --sidebar-w: 30px !important; }
+  /* De strip blijft staan als de zijbalk inklapt: de omgevingswissel hoort altijd bereikbaar. */
+  .otto-shell.collapsed-rail    { --rail-w: 30px !important; }
+  .otto-shell.collapsed-list    { --list-w: 30px !important; }
+  .otto-shell.collapsed-sidebar .sidebar > :not(.panel-expand),
+  .otto-shell.collapsed-rail .cat-rail > :not(.panel-expand),
+  .otto-shell.collapsed-list .msg-list > :not(.panel-expand) { display: none !important; }
+  .otto-shell.collapsed-sidebar .sidebar,
+  .otto-shell.collapsed-rail .cat-rail,
+  .otto-shell.collapsed-list .msg-list { padding: 0; overflow: hidden; }
+  .otto-shell.collapsed-sidebar .sidebar .panel-expand,
+  .otto-shell.collapsed-rail .cat-rail .panel-expand,
+  .otto-shell.collapsed-list .msg-list .panel-expand { display: flex; }
+  .otto-shell.collapsed-sidebar .col-resizer[data-resize="sidebar"],
+  .otto-shell.collapsed-rail .col-resizer[data-resize="rail"],
+  .otto-shell.collapsed-list .col-resizer[data-resize="list"] { display: none; }
+}
+.mail-head { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.move-chip { font-size: 11.5px; font-weight: 700; border: 1px solid var(--border-purple-2); background: var(--surface);
+  padding: 3px 9px; border-radius: var(--r-tag); cursor: pointer; }
+.move-chip:hover { background: var(--purple-100); }
+.mail-subject { font-size: 23px; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; margin-bottom: 16px; }
+.mail-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); padding: 22px 24px; }
+.mail-body { white-space: pre-wrap; font-size: 14.5px; line-height: 1.65; color: var(--body-text-3); }
+/* Rijke HTML-weergave: sandbox-iframe (geen scripts). Altijd een witte ondergrond —
+   e-mail-HTML gaat uit van wit papier, ook in donker thema. inbox.js meet de hoogte. */
+.mail-html { display: block; width: 100%; min-height: 120px; border: 0; border-radius: 10px; background: #fff; }
+.sig-preview-frame { display: block; width: 100%; height: 150px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+/* .btn zet display en wint anders van het hidden-attribuut. */
+#sig-builder [hidden] { display: none !important; }
+
+/* ── WYSIWYG-handtekening-editor ─────────────────────────────────────────── */
+.sig-toolbar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 6px;
+  border: 1px solid var(--border); border-bottom: 0; border-radius: 10px 10px 0 0; background: var(--surface-2); }
+.sig-toolbar button { width: 30px; height: 30px; border: 1px solid transparent; border-radius: 7px;
+  background: none; cursor: pointer; font-size: 14px; color: var(--text-2); display: inline-flex;
+  align-items: center; justify-content: center; }
+.sig-toolbar button:hover { background: var(--bg); border-color: var(--border); }
+.sig-tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 3px; }
+.sig-tb-select { height: 30px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface);
+  color: var(--text-2); font-size: 12px; padding: 0 4px; cursor: pointer; }
+.sig-insert-panel { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 8px;
+  border: 1px solid var(--border); border-top: 0; background: var(--surface-2); }
+#sig-builder .sig-insert-panel[hidden] { display: none !important; }
+.sig-tb-color { display: inline-flex; align-items: center; gap: 2px; font-weight: 800; font-size: 13px;
+  color: var(--text-2); cursor: pointer; padding: 0 4px; }
+.sig-tb-color input { width: 22px; height: 22px; border: none; background: none; padding: 0; cursor: pointer; }
+/* Wit papier, ook in donker thema — e-mail-HTML gaat uit van wit. */
+.sig-editor { min-height: 150px; border: 1px solid var(--border); border-radius: 0 0 10px 10px;
+  padding: 12px 14px; background: #fff; color: #1f2328; font: 14px/1.55 -apple-system, 'Segoe UI', Roboto, sans-serif;
+  overflow-y: auto; max-height: 340px; }
+.sig-editor:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.sig-editor img { max-width: 100%; height: auto; }
+.ph-chip { display: inline-block; background: #efeaff; color: #5b32c8; border-radius: 6px;
+  padding: 0 6px; font-size: 12px; font-weight: 700; margin: 0 1px; white-space: nowrap; user-select: all; }
+.action-row { display: flex; gap: 10px; margin-top: 16px; }
+
+.empty-state { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #B6B6C2; padding: 40px; text-align: center; }
+.empty-state .glyph { width: 56px; height: 56px; border-radius: 16px; background: var(--purple-200);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.empty-state .glyph .core { width: 16px; height: 16px; border-radius: 50%; background: #C9BEF4; }
+
+/* ── Draft panel ───────────────────────────────────────────────────────── */
+.draft-panel { margin-top: 22px; background: var(--surface); border: 1.5px solid var(--border-purple); border-radius: var(--r-card);
+  overflow: hidden; box-shadow: var(--shadow-draft); }
+.draft-head { display: flex; align-items: center; gap: 10px; padding: 14px 20px;
+  background: linear-gradient(90deg, var(--purple-tint), var(--purple-50)); border-bottom: 1px solid var(--purple-200); }
+.draft-head .icon { width: 26px; height: 26px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; }
+.draft-head .icon .core { width: 8px; height: 8px; border-radius: 50%; background: var(--on-accent); }
+.draft-head .t { font-size: 14px; font-weight: 800; letter-spacing: -.01em; color: var(--heading-dark); }
+.draft-head .s { font-size: 11.5px; color: #8A82A0; }
+.draft-body { padding: 16px 20px 18px; }
+.thread-count { font-size: 10.5px; font-weight: 700; color: var(--accent); background: var(--purple-100); padding: 1px 6px; border-radius: 8px; flex: none; }
+.thread-msg { position: relative; }
+.thread-msg + .thread-msg { margin-top: 10px; }
+.thread-collapsed { cursor: pointer; }
+.thread-collapsed .thread-body { display: none; }
+.thread-collapsed .mail-html { display: none; }
+.thread-collapsed::after { content: "Toon bericht ↓"; font-size: 11.5px; color: var(--accent); font-weight: 600; }
+.thread-collapsed:hover { border-color: var(--accent); }
+.draft-guide { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.draft-actions { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.draft-note { font-size: 11.5px; color: var(--muted-2); }
+.draft-sent { padding: 26px 20px; text-align: center; }
+.draft-sent .ring { width: 46px; height: 46px; border-radius: 50%; background: var(--success-bg);
+  display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; color: var(--success); font-size: 22px; font-weight: 800; }
+.no-draft { margin-top: 22px; background: var(--surface); border: 1px dashed var(--border); border-radius: 14px; padding: 18px 20px;
+  display: flex; align-items: center; gap: 12px; }
+
+/* ── Briefing ──────────────────────────────────────────────────────────── */
+.greet-date { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .02em; }
+.greet-h { font-size: 30px; font-weight: 800; letter-spacing: -.025em; margin: 4px 0; }
+.greet-sub { font-size: 15px; color: var(--text-2); line-height: 1.5; margin-bottom: 26px; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 30px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 15px; padding: 18px 18px 16px; }
+.stat-card .v { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+.stat-card .l { font-size: 12.5px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+.brief-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.wait-row { display: flex; align-items: center; gap: 12px; padding: 11px 10px; border-radius: 11px; cursor: pointer; }
+.wait-row:hover { background: var(--purple-50); }
+.otto-today { background: linear-gradient(160deg, #6C4CE6, #8B5CF0); border-radius: var(--r-card); padding: 22px; color: #fff; }
+
+/* ── Tasks ─────────────────────────────────────────────────────────────── */
+.task-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 15px 18px;
+  display: flex; align-items: flex-start; gap: 14px; }
+.task-title { font-size: 14.5px; font-weight: 700; color: var(--text); }
+.task-title.done { color: var(--muted-3); text-decoration: line-through; }
+.due { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: var(--r-tag); color: var(--text-2); background: var(--divider); }
+.due.urgent { color: var(--danger); background: var(--danger-bg); }
+
+/* ── Categories ────────────────────────────────────────────────────────── */
+.cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+.cat-card .hd { display: flex; align-items: center; gap: 11px; }
+.cat-card .nm { font-size: 15px; font-weight: 800; flex: 1; }
+.cat-ai { font-size: 13px; color: var(--text-2); line-height: 1.5; margin-top: 10px; padding-left: 23px; }
+.cat-ai .lab { color: var(--muted-2); font-weight: 700; }
+.subcat { display: flex; gap: 9px; align-items: flex-start; padding: 9px 12px; background: var(--surface-2); border: 1px solid var(--divider-2); border-radius: 10px; }
+.subcat .nm { font-size: 13px; font-weight: 700; color: var(--heading-dark); }
+.subcat .ai { font-size: 12px; color: var(--muted); line-height: 1.45; margin-top: 1px; }
+
+/* ── Integrations ──────────────────────────────────────────────────────── */
+.integ-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.integ-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; gap: 14px; align-items: flex-start; }
+.integ-icon { width: 40px; height: 40px; border-radius: 11px; flex: none; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 14px; }
+.integ-btn { height: 34px; padding: 0 14px; border-radius: 9px; font-size: 12.5px; font-weight: 700; cursor: pointer; flex: none; border: none; }
+.integ-btn.on { border: 1px solid var(--success-border); background: var(--success-bg); color: var(--success-text); }
+.integ-btn.off { background: var(--accent); color: #fff; }
+
+/* ── Settings ──────────────────────────────────────────────────────────── */
+.settings-list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); overflow: hidden; }
+.set-row { display: flex; align-items: center; gap: 16px; padding: 17px 20px; border-bottom: 1px solid var(--divider); }
+.set-row:last-child { border-bottom: none; }
+.set-row .lbl { font-size: 14.5px; font-weight: 700; }
+.set-row .desc { font-size: 12.5px; color: var(--muted); line-height: 1.45; margin-top: 2px; }
+.set-inline { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.set-inline input[type="checkbox"] { margin-top: 3px; flex: none; width: 16px; height: 16px; accent-color: var(--accent); }
+.set-inline-lbl { display: block; font-size: 14px; font-weight: 700; }
+.set-inline-desc { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.45; margin-top: 2px; }
+.locked-note { margin-top: 16px; background: var(--purple-100); border: 1px solid var(--border-purple); border-radius: 14px;
+  padding: 16px 18px; display: flex; gap: 12px; align-items: flex-start; }
+
+/* ── Page headers ──────────────────────────────────────────────────────── */
+.page-h { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+.page-sub { font-size: 14px; color: var(--text-2); margin: 4px 0 24px; }
+.page-head-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+
+/* ── Outlook view ──────────────────────────────────────────────────────── */
+.ol-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--surface-3); }
+.ol-banner { flex: none; background: var(--outlook-bg); border-bottom: 1px solid var(--outlook-border); padding: 11px 18px; display: flex; align-items: center; gap: 10px; }
+.ol-banner .ico { width: 22px; height: 22px; border-radius: 6px; background: var(--outlook); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 12px; }
+.ol-banner .tx { font-size: 13px; color: #2A4A6B; line-height: 1.4; }
+.ol-cols { flex: 1; min-height: 0; display: flex; }
+.ol-folders { width: var(--ol-folders-w); flex: none; background: var(--surface-2); border-right: 1px solid var(--border-2); overflow-y: auto; padding: 14px 10px; }
+.ol-folder { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-2); }
+.ol-folder.active { color: var(--text); background: var(--outlook-bg-2); font-weight: 700; }
+.ol-folder .ct { margin-left: auto; font-size: 11px; font-weight: 700; color: #8A8A98; }
+.ol-section { font-size: 10.5px; font-weight: 800; letter-spacing: .07em; color: #9AA4B2; text-transform: uppercase; padding: 16px 8px 7px; }
+.ol-list { width: var(--ol-list-w); flex: none; background: var(--surface); border-right: 1px solid var(--border-2); overflow-y: auto; }
+.ol-list-head { position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 13px 16px; font-size: 14px; font-weight: 800; }
+.ol-row { padding: 11px 14px; border-bottom: 1px solid var(--border); cursor: pointer; border-left: 3px solid transparent; display: block; }
+.ol-row.active { border-left-color: var(--outlook); background: var(--outlook-bg-2); }
+.ol-bar { width: 3px; align-self: stretch; border-radius: 2px; flex: none; }
+.ol-read { flex: 1; min-width: 0; overflow-y: auto; padding: 22px; }
+.ol-addin { margin-top: 16px; background: var(--surface); border: 1.5px solid var(--outlook-border); border-radius: 12px; overflow: hidden; }
+.ol-addin-head { display: flex; align-items: center; gap: 10px; padding: 12px 18px; background: var(--outlook-bg-2); border-bottom: 1px solid var(--outlook-border); }
+
+/* ── Admin tables / matrix ─────────────────────────────────────────────── */
+.table { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.table .thead, .table .trow { display: grid; gap: 12px; padding: 13px 18px; align-items: center; }
+.table .thead { background: var(--surface-2); border-bottom: 1px solid var(--border); font-size: 11.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.table .trow { border-bottom: 1px solid var(--divider); }
+.table .trow:last-child { border-bottom: none; }
+.users-grid { grid-template-columns: 2.4fr 1.4fr .9fr 1fr .9fr; }
+.matrix-grid { grid-template-columns: 1.7fr repeat(5, 1fr); gap: 8px; }
+.role-select { width: 100%; height: 34px; border: 1px solid var(--border-purple-2); border-radius: 8px; padding: 0 8px; font-size: 12.5px; font-weight: 600; color: var(--heading-dark); background: var(--surface); outline: none; cursor: pointer; }
+.status-pill { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: var(--r-tag); }
+.sys-row { display: flex; align-items: center; gap: 12px; padding: 15px 18px; border-bottom: 1px solid var(--divider); }
+.sys-row:last-child { border-bottom: none; }
+.audit-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--divider); }
+.audit-row:last-child { border-bottom: none; }
+.scope-row { display: flex; align-items: center; gap: 12px; padding: 11px 2px; border-top: 1px solid var(--divider); }
+.model-card { border: 2px solid var(--border); background: var(--surface); border-radius: 13px; padding: 16px; cursor: pointer; }
+.model-card.sel { border-color: var(--accent); background: var(--purple-50); }
+.bill-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.bill-card-grad { background: linear-gradient(160deg, #6C4CE6, #8B5CF0); border-radius: var(--r-card); padding: 22px; color: #fff; }
+.progress { height: 7px; border-radius: 5px; overflow: hidden; }
+.progress > div { height: 100%; border-radius: 5px; }
+.invoice-row { display: flex; align-items: center; gap: 14px; padding: 15px 18px; border-bottom: 1px solid var(--divider); }
+.invoice-row:last-child { border-bottom: none; }
+
+/* ── Marketing + auth ──────────────────────────────────────────────────── */
+.auth-wrap { flex: 1; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(120% 120% at 80% -10%, var(--purple-100) 0%, var(--bg) 46%); padding: 32px; min-height: 100vh; }
+.auth-card { width: 460px; max-width: 100%; animation: ottoFade .5s ease both; }
+.auth-box { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 34px 32px; box-shadow: var(--shadow-card); }
+.auth-brand { display: flex; align-items: center; gap: 11px; margin-bottom: 30px; }
+.auth-brand .logo-badge { width: 36px; height: 36px; }
+.auth-brand .logo-badge .core { width: 12px; height: 12px; }
+.auth-brand .name { font-size: 23px; font-weight: 800; letter-spacing: -.02em; }
+.provider-row { display: flex; align-items: center; gap: 13px; padding: 15px 16px; border: 1.5px solid var(--border); border-radius: 13px; cursor: pointer; transition: all .15s; background: var(--surface); width: 100%; text-align: left; }
+.provider-row:hover { border-color: var(--accent); background: var(--purple-50); }
+.provider-tag { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 15px; }
+.principle { display: flex; gap: 8px; align-items: flex-start; background: var(--purple-100); border-radius: 11px; padding: 12px 14px; }
+.scan-ring { width: 52px; height: 52px; border-radius: 50%; border: 4px solid var(--purple-200); border-top-color: var(--accent); animation: ottoSpin 1s linear infinite; margin-bottom: 22px; }
+.scan-bar { height: 8px; border-radius: 6px; background: var(--purple-200); overflow: hidden; }
+.scan-bar > div { height: 100%; border-radius: 6px; background: var(--accent); transition: width .12s linear; }
+.divider-or { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--muted); font-size: 12px; }
+.divider-or::before, .divider-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.sso-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 46px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); font-size: 14px; font-weight: 700; cursor: pointer; color: var(--text); }
+.sso-btn:hover { background: var(--bg); }
+
+/* Landing */
+.landing { min-height: 100vh; background: radial-gradient(130% 120% at 85% -10%, var(--purple-100) 0%, var(--bg) 50%); }
+.landing-nav { display: flex; align-items: center; padding: 22px 40px; max-width: 1120px; margin: 0 auto; }
+@media (max-width: 900px) {
+  .integ-grid, .bill-grid, .brief-grid, .stat-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Docs top navigation ─────────────────────────────────────────────────── */
+.nav-links { display: flex; align-items: center; gap: 26px; margin-right: 22px; }
+.nav-links a { font-size: 14px; font-weight: 600; color: var(--text-2); }
+.nav-links a:hover { color: var(--accent); }
+/* The docs have their own nav toggle — hide the floating FAB there. */
+.landing ~ #theme-fab { display: none; }
+/* ── Docs site ───────────────────────────────────────────────────────────── */
+.docs-wrap { max-width: 1120px; margin: 0 auto; padding: 28px 40px 80px; display: grid; grid-template-columns: 232px 1fr; gap: 44px; }
+.docs-side { position: sticky; top: 24px; align-self: start; }
+.docs-side .grp { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 18px 0 8px; }
+.docs-side a { display: block; font-size: 14px; color: var(--text-2); padding: 6px 10px; border-radius: 8px; }
+.docs-side a:hover { background: var(--purple-100); color: var(--accent); }
+.docs-side a.active { background: var(--purple-150); color: var(--accent); font-weight: 700; }
+.prose { max-width: 720px; }
+.prose h1 { font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 8px; }
+.prose .sub { font-size: 16px; color: var(--text-2); margin-bottom: 28px; }
+.prose h2 { font-size: 21px; font-weight: 800; margin: 32px 0 10px; }
+.prose h3 { font-size: 16px; font-weight: 700; margin: 22px 0 6px; }
+.prose p, .prose li { font-size: 14.5px; color: var(--text-3); line-height: 1.7; }
+.prose ul, .prose ol { margin: 8px 0 8px 22px; display: flex; flex-direction: column; gap: 6px; }
+.prose code { background: var(--surface-3); border-radius: 5px; padding: 1px 6px; font-size: 13px; }
+.prose pre { background: var(--surface-3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 12px 0; }
+.prose a { color: var(--accent); font-weight: 600; }
+.prose .note { background: var(--purple-100); border: 1px solid var(--border-purple); border-radius: 11px; padding: 13px 15px; font-size: 13.5px; color: var(--accent-soft-text); margin: 16px 0; }
+.prose .steps-num { counter-reset: s; list-style: none; margin-left: 0; }
+.prose .steps-num li { counter-increment: s; position: relative; padding-left: 34px; min-height: 24px; }
+.prose .steps-num li::before { content: counter(s); position: absolute; left: 0; top: 1px; width: 22px; height: 22px; border-radius: 7px; background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .docs-wrap { grid-template-columns: 1fr; gap: 20px; }
+  .docs-side { position: static; }
+}
+
+/* ── App shell: mobile navigation (hamburger + off-canvas sidebar) ────────── */
+.nav-toggle { display: none; }
+.nav-overlay { display: none; }
+
+@media (max-width: 860px) {
+  /* Panels stack on mobile — resizing/collapsing doesn't apply. */
+  .col-resizer, .col-toggle { display: none !important; }
+  /* Top bar: surface the hamburger, drop the clutter that won't fit. */
+  .nav-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; flex: none; border: 1px solid var(--border);
+    background: var(--surface); border-radius: 10px; font-size: 18px; line-height: 1;
+    cursor: pointer; color: var(--text);
+  }
+  .topbar { padding: 0 12px; gap: 10px; }
+  .topbar .brand { width: auto; }
+  .topbar .search,
+  .topbar .segmented,
+  .topbar .user-meta,
+  .topbar .pill-connected { display: none; }
+  .topbar .topbar-logout { display: none !important; }  /* beats the link's inline display */
+
+  /* Sidebar becomes an off-canvas drawer the hamburger slides in. */
+  .sidebar {
+    position: fixed; top: var(--topbar-h); left: 0; bottom: 0; z-index: 50;
+    width: 272px; max-width: 84vw;
+    transform: translateX(-100%); transition: transform .22s ease;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .28);
+  }
+  .otto-shell.nav-open .sidebar { transform: translateX(0); }
+  /* De strip hoort bij de lade: op een telefoon is 56px naast de inhoud te duur,
+     en losgekoppeld zou de omgevingswissel op een vreemde plek blijven hangen. */
+  .ws-rail {
+    position: fixed; top: var(--topbar-h); left: 0; bottom: 0; z-index: 51;
+    transform: translateX(-100%); transition: transform .22s ease;
+  }
+  .otto-shell.nav-open .ws-rail { transform: translateX(0); }
+  .otto-shell.nav-open .sidebar { transform: translateX(56px); }
+  .otto-shell.nav-open .nav-overlay {
+    display: block; position: fixed; inset: var(--topbar-h) 0 0 0;
+    background: rgba(0, 0, 0, .42); z-index: 40;
+  }
+
+  /* Full-width content now the sidebar floats. */
+  .screen-scroll { padding: 18px 16px 40px; }
+
+  /* Inbox / Outlook: one pane at a time (list ⇄ reading), like a phone mail app. */
+  .inbox-cols { flex-direction: column; overflow-y: auto; }
+  .cat-rail {
+    width: 100%; flex: none; display: block; overflow: visible;
+    border-right: none; border-bottom: 1px solid var(--border); padding: 12px 14px;
+  }
+  .cat-rail .rail-head { display: none; }
+  /* Categories become a horizontal chip scroller. */
+  .rail-list { flex-direction: row; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+  .cat-rail .rail-item { flex: none; border: 1px solid var(--border); border-radius: 999px; padding: 7px 12px; }
+  .cat-rail .rail-item.active { border-color: var(--accent); }
+  .msg-list { width: 100%; flex: none; border-right: none; border-bottom: 1px solid var(--border); }
+  .reading { flex: none; }
+  .reading-inner { padding: 18px 16px 32px; max-width: 100%; }
+  .mail-subject { font-size: 20px; }
+  .mobile-back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px;
+    font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; }
+
+  /* Single-pane: show the list, OR the open mail — never both stacked. */
+  .inbox-cols.has-selection .cat-rail,
+  .inbox-cols.has-selection .msg-list { display: none; }
+  .inbox-cols:not(.has-selection) .reading { display: none; }
+
+  /* The Lijst/Outlook toggle is a desktop convenience; mobile defaults to the list. */
+  .viewswitch { display: none; }
+  /* Teams settings: stack key/value rows so long values don't overflow. */
+  .kv-row { flex-direction: column; gap: 2px; }
+  .kv-k { width: auto; }
+}
+

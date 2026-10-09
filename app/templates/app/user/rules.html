@@ -1,0 +1,84 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Regels') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:900px;">
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['toast','info','error'] %}
+      <div class="alert alert-{{ 'error' if cat=='error' else 'info' }}">{{ m }}</div>
+    {% endfor %}
+
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ _('Regels') }}</div>
+      <span style="flex:1;"></span>
+      {% if accounts|length > 1 %}
+        <form method="get" action="{{ url_for('web.rules') }}">
+          <select name="account" class="input" style="height:36px;" data-submit-on-change>
+            {% for a in accounts %}
+              <option value="{{ a.id }}" {{ 'selected' if selected_account and a.id == selected_account.id }}>{{ a.email }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      {% endif %}
+      {% if rules_supported and selected_account %}
+        <button class="btn btn-ghost btn-sm" data-rule-import data-acct="{{ selected_account.id }}">{{ _('Uit Outlook inlezen') }}</button>
+      {% endif %}
+    </div>
+    <div class="page-sub">
+      {{ _('Regels draaien in Outlook zelf, dus ook wanneer Otto stilstaat. Ze worden van boven naar beneden toegepast.') }}
+    </div>
+
+    {% if not selected_account %}
+      <div class="card card-18" style="padding:40px; text-align:center; color:var(--muted); margin-top:16px;">
+        <div style="font-size:32px; margin-bottom:8px;">📥</div>
+        <div style="font-size:15px; font-weight:700; color:var(--text-2);">{{ _('Nog geen mailbox gekoppeld') }}</div>
+        <div style="font-size:13px; margin-top:3px;">{{ _('Koppel eerst een mailbox bij Integraties.') }}</div>
+      </div>
+    {% elif not rules_supported %}
+      <div class="card card-18" style="padding:22px; margin-top:16px;">
+        <div style="font-size:14px; font-weight:700;">{{ _('Regels zijn hier niet beschikbaar') }}</div>
+        <div style="font-size:13px; color:var(--muted); margin-top:4px;">
+          {{ _('Deze mailbox ondersteunt geen serverregels. Dat werkt momenteel alleen met Microsoft 365 / Outlook.') }}
+        </div>
+      </div>
+    {% else %}
+
+      {# ── Bestaande regels ──────────────────────────────────────────── #}
+      <div style="margin-top:16px;">
+        {% for item in rules %}
+          {% set r = item.rule %}
+          <div class="card" style="padding:16px 18px; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <span style="font-size:12px; color:var(--muted-3); min-width:18px;">{{ loop.index }}</span>
+              <strong style="font-size:14px;">{{ r.name }}</strong>
+              {% if not r.in_outlook %}
+                <span class="pill" style="color:var(--danger); font-size:11px;">{{ _('niet in Outlook') }}</span>
+              {% endif %}
+              <span style="flex:1;"></span>
+              <button class="btn btn-ghost btn-sm" data-rule-move data-id="{{ r.id }}" data-dir="up" {{ 'disabled' if loop.first }}>↑</button>
+              <button class="btn btn-ghost btn-sm" data-rule-move data-id="{{ r.id }}" data-dir="down" {{ 'disabled' if loop.last }}>↓</button>
+              <div class="toggle {{ 'on' if r.enabled }}" data-rule-toggle data-id="{{ r.id }}" title="{{ _('Aan/uit') }}"><div class="knob"></div></div>
+              <button class="btn-discard" style="height:28px;" data-rule-delete data-id="{{ r.id }}">{{ _('Verwijderen') }}</button>
+            </div>
+            <div style="font-size:12.5px; color:var(--muted); margin-top:8px;">
+              <strong>{{ _('Als') }}:</strong> {{ item.conditions|join(' · ') }}<br>
+              <strong>{{ _('Dan') }}:</strong> {{ item.actions|join(' · ') }}
+            </div>
+            {% if r.last_error %}
+              <div style="font-size:12px; color:var(--danger); margin-top:6px;">{{ r.last_error }}</div>
+            {% endif %}
+          </div>
+        {% else %}
+          <div style="font-size:13px; color:var(--muted-3); margin-bottom:14px;">{{ _('Nog geen regels.') }}</div>
+        {% endfor %}
+      </div>
+
+      {# ── Nieuwe regel ──────────────────────────────────────────────── #}
+      <div style="margin-top:14px;" data-acct="{{ selected_account.id }}" id="rule-form">
+        <button class="btn btn-primary" style="height:40px;" data-rule-new>{{ _('Nieuwe regel') }}</button>
+      </div>
+      {% include "app/_rule_modal.html" %}
+
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

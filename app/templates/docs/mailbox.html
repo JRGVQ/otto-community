@@ -1,0 +1,36 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Mailbox koppelen') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Mailbox koppelen') }}</h1>
+<div class="sub">{{ _('Verbind Microsoft 365 of Gmail via OAuth. Otto leest en sorteert je mail en zet concepten klaar — verzenden doe jij.') }}</div>
+
+<h2>{{ _('Hoe het werkt') }}</h2>
+<p>{{ _('Otto koppelt via veilige OAuth —') }} <strong>{{ _('we slaan nooit je wachtwoord op') }}</strong>. {{ _('De gevraagde rechten zijn') }} <code>Mail.ReadWrite</code> {{ _('(lezen + concepten plaatsen), nooit') }} <code>Mail.Send</code>.</p>
+
+<h2>Microsoft 365 / Outlook</h2>
+<ol class="steps-num">
+  <li>{{ _('Open in de app') }} <strong>{{ _('Integraties') }}</strong> {{ _('(of de setup-checklist) en klik op') }} <strong>{{ _('Koppel Microsoft 365') }}</strong>.</li>
+  <li>{{ _('Je wordt naar de Microsoft-aanmeldpagina gestuurd. Meld je aan en geef toestemming.') }}</li>
+  <li>{{ _('Je komt terug in Otto; binnen één tot twee minuten verschijnt je recente mail, netjes gesorteerd.') }}</li>
+</ol>
+<div class="note">{{ _('Werkt je bedrijf met een eigen Azure-tenant en wil je de toestemming daar houden? Zie') }} <a href="{{ docs_url('eigen-app') }}">{{ _('Eigen app koppelen') }}</a>.</div>
+
+<h2>Gmail / Google Workspace</h2>
+<ol class="steps-num">
+  <li>{{ _('Klik op') }} <strong>{{ _('Koppel Gmail') }}</strong> {{ _('bij Integraties.') }}</li>
+  <li>{{ _('Meld je aan met je Google-account en geef toestemming voor de gevraagde scope.') }}</li>
+  <li>{{ _('Otto importeert je recente mail en begint te sorteren.') }}</li>
+</ol>
+<p>{{ _('Gmail vereist dat de koppeling geconfigureerd is voor jouw bedrijf. Is de knop er niet, voeg dan je eigen Google-app toe via') }} <a href="{{ docs_url('eigen-app') }}">{{ _('Eigen app koppelen') }}</a>.</p>
+
+<h2>{{ _('Status & opnieuw koppelen') }}</h2>
+<p>{{ _('Bovenaan') }} <strong>{{ _('Integraties') }}</strong> {{ _('zie je de gekoppelde mailbox met sync-status. Je kan altijd') }} <strong>{{ _('Opnieuw koppelen') }}</strong> {{ _('als je toegang wijzigt.') }}</p>
+
+<h2>{{ _('Veelvoorkomende fouten') }}</h2>
+<ul>
+  <li><strong>{{ _('Niets komt binnen:') }}</strong> {{ _('de eerste sync kan even duren. Controleer of de koppeling "verbonden" toont.') }}</li>
+  <li><strong>{{ _('Toestemming geweigerd:') }}</strong> {{ _('mogelijk moet je beheerder de app eerst goedkeuren (admin consent).') }}</li>
+</ul>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('eigen-app') }}">{{ _('Volgende: Eigen app koppelen →') }}</a></p>
+{% endblock %}

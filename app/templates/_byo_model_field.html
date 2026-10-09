@@ -1,0 +1,21 @@
+{# Model picker for a bring-your-own-key provider. Used by the AI settings screen and the
+   onboarding flow, so both offer exactly the same list.
+
+   Expects: byo_model_choices, byo_model_is_custom, byo_model_custom, current_model,
+            label_class ('label' or 'mini-label'), provider (the saved provider key).
+   Pair with _byo_model_script.html, which keeps the options in step with the provider
+   dropdown (that one needs byo_model_catalogue + byo_model_hints). #}
+<div class="{{ label_class|default('label') }}" id="model-label">{{ _('Model') }}{% if provider == 'azure' %} {{ _('(deployment)') }}{% endif %}</div>
+<select name="model" class="input" id="byo-model">
+  {% for value, label in byo_model_choices %}
+    <option value="{{ value }}"
+            {{ 'selected' if (byo_model_is_custom and value == byo_model_custom) or (not byo_model_is_custom and value == current_model) }}>{{ label }}</option>
+  {% endfor %}
+</select>
+{# Only visible when "Anders…" is picked — Azure deployments and OpenAI-compatible
+   endpoints use ids that cannot be known in advance. #}
+<input name="model_custom" class="input" id="byo-model-custom"
+       style="margin-top:8px; {{ '' if byo_model_is_custom else 'display:none;' }}"
+       placeholder="{{ _('model-id of deployment-naam') }}"
+       value="{{ current_model if byo_model_is_custom else '' }}">
+<div id="byo-model-hint" style="margin-top:6px; font-size:12px; color:var(--muted);"></div>

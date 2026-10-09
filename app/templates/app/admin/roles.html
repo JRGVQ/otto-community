@@ -1,0 +1,28 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Rollen & rechten') }} — {{ _('Beheer') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:920px;">
+    <div class="page-h">{{ _('Rollen & rechten') }}</div>
+    <div class="page-sub">{{ _('Bepaal per rol wie wat mag zien en aanpassen. De rol Eigenaar heeft altijd alle rechten.') }}</div>
+
+    <div class="table">
+      <div class="thead matrix-grid" style="text-transform:none; letter-spacing:0;">
+        <div style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">{{ _('Recht') }}</div>
+        {% for r in perm_roles %}<div style="font-size:11.5px; font-weight:800; color:var(--heading-dark); text-align:center;">{{ r }}</div>{% endfor %}
+      </div>
+      {% for row in perm_rows %}
+        <div class="trow matrix-grid">
+          <div style="font-size:13px; font-weight:600; color:var(--body-text-3);">{{ row.label }}</div>
+          {% for cell in row.cells %}
+            <div style="display:flex; justify-content:center;">
+              <div class="check {{ 'on' if cell.on }} {{ 'locked' if cell.locked }}"
+                   {% if not cell.locked %}data-action="toggle-perm" data-role="{{ cell.role }}" data-perm="{{ cell.perm }}"{% endif %}>{{ '✓' if cell.on }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

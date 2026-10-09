@@ -1,0 +1,79 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('AI & model') }} — {{ _('Beheer') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:800px;">
+    <div class="page-h">{{ _('AI & model') }}</div>
+    <div class="page-sub">{{ _('Kies het taalmodel en de databeleidsregels. Otto draait achter een abstractielaag, dus je kunt later wisselen.') }}</div>
+
+    <div style="font-size:14px; font-weight:800; margin-bottom:12px;">{{ _('Model') }}</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:26px;">
+      {% for m in models %}
+        <div class="model-card {{ 'sel' if m.selected }}" data-action="set-model" data-model="{{ m.key }}">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+            <div style="font-size:14px; font-weight:800;">{{ m.name }}</div>
+            {% if m.selected %}<span style="font-size:10.5px; font-weight:800; color:#fff; background:var(--accent); padding:2px 8px; border-radius:6px;">{{ _('Gekozen') }}</span>{% endif %}
+          </div>
+          <div style="font-size:12.5px; color:var(--muted); line-height:1.45;">{{ m.desc }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="table">
+      <div class="set-row">
+        <div style="flex:1;"><div style="font-size:14px; font-weight:700;">{{ _('Dataresidentie') }}</div><div style="font-size:12px; color:var(--muted);">{{ _('Waar mailinhoud verwerkt en bewaard wordt.') }}</div></div>
+        <span class="pill pill-success" style="padding:7px 12px;">{{ ai.residency }}</span>
+      </div>
+      <div class="set-row">
+        <div style="flex:1;"><div style="font-size:14px; font-weight:700;">{{ _('Few-shot personalisatie (embeddings)') }}</div><div style="font-size:12px; color:var(--muted);">{{ _('Gebruik eerdere antwoorden als voorbeeld voor de schrijfstijl.') }}</div></div>
+        <div class="toggle {{ 'on' if ai.fewshot }}" data-action="toggle-ai" data-key="fewshot"><div class="knob"></div></div>
+      </div>
+      <div class="set-row">
+        <div style="flex:1;"><div style="font-size:14px; font-weight:700;">{{ _('Verbruikslimiet per gebruiker') }}</div><div style="font-size:12px; color:var(--muted);">{{ _('Max. aantal AI-oproepen per gebruiker per maand.') }}</div></div>
+        <input type="number" class="input" style="width:90px; height:38px; font-weight:700; text-align:center;" value="{{ ai.limit }}" data-action="ai-value" data-key="limit" />
+      </div>
+      <div class="set-row">
+        <div style="flex:1;"><div style="font-size:14px; font-weight:700;">{{ _('Vertrouwensdrempel voor concepten') }}</div><div style="font-size:12px; color:var(--muted);">{{ _('Onder deze zekerheid markeert Otto het concept extra ter controle.') }} (<span id="conf-val">{{ ai.confidence }}</span>%)</div></div>
+        <input type="range" min="0" max="100" value="{{ ai.confidence }}" style="width:160px; accent-color:var(--accent);" data-action="ai-value" data-key="confidence" data-out="conf-val" />
+      </div>
+    </div>
+
+    <div style="font-size:14px; font-weight:800; margin:28px 0 6px;">{{ _('Eigen AI-sleutel') }} <span class="pill" style="font-size:10.5px; vertical-align:middle;">Connect</span></div>
+    <div class="page-sub" style="margin-bottom:12px;">{{ _('Gebruik je eigen AI-provider — Otto draait dan op jouw sleutel i.p.v. ons model, en je betaalt je AI-verbruik rechtstreeks bij de provider. Zonder sleutel valt Otto terug op gratis basissortering (geen AI-concepten).') }}</div>
+    <form method="post" action="{{ url_for('web.admin_ai_byo') }}" class="card card-18" style="padding:18px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div>
+          <div class="label">{{ _('Provider') }}</div>
+          <select name="provider" class="input" id="byo-provider">
+            <option value="">{{ _('— geen (gratis basissortering) —') }}</option>
+            {% for p in byo_providers %}<option value="{{ p.key }}" {{ 'selected' if ai.byo_provider == p.key }}>{{ p.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          {% with label_class='label', current_model=ai.byo_model, provider=ai.byo_provider %}
+            {% include "_byo_model_field.html" with context %}
+          {% endwith %}
+        </div>
+        <div style="grid-column:1 / -1;">
+          <div class="label">{{ _('API-sleutel') }} {% if byo_has_key %}<span class="pill pill-success" style="font-size:10.5px;">{{ _('ingesteld ✓') }}</span>{% endif %}</div>
+          <input name="api_key" type="password" autocomplete="off" class="input" placeholder="{{ _('•••••• — laat leeg om de huidige te behouden') if byo_has_key else _('plak je provider-API-sleutel') }}">
+        </div>
+        <div style="grid-column:1 / -1;">
+          <div class="label">{{ _('Endpoint / Base-URL') }} <span style="color:var(--muted); font-weight:500;">{{ _('— enkel voor Azure of OpenAI-compatibel') }}</span></div>
+          <input name="base_url" class="input" placeholder="{{ _('bv. https://….openai.azure.com  of  https://openrouter.ai/api/v1') }}" value="{{ ai.byo_base_url or '' }}">
+        </div>
+        <div style="grid-column:1 / -1;">
+          {% with provider=ai.byo_provider %}{% include "_byo_key_guide.html" with context %}{% endwith %}
+        </div>
+      </div>
+      <div style="margin-top:14px;"><button class="btn btn-primary" type="submit">{{ _('Sleutel opslaan') }}</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% include "_byo_model_script.html" with context %}
+{% endblock %}

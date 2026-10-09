@@ -1,0 +1,141 @@
+/* Otto design tokens — light (default) + dark theme.
+   Structural surfaces use these vars so [data-theme="dark"] flips the whole UI.
+   Brand/data colours (accent, category colours, avatars) are intentionally stable. */
+:root {
+  /* Brand / accent */
+  --accent: #6C4CE6;
+  --accent-hover: #5C3DD6;
+  --on-accent: #ffffff;            /* always-white text/dots on coloured backgrounds */
+  --purple-50: #FAF9FF;
+  --purple-100: #F4F2FE;
+  --purple-150: #F1EDFE;
+  --purple-200: #EEEAFD;
+  --purple-tint: #F6F3FF;
+  --border-purple: #E6E0FB;
+  --border-purple-2: #E6E2F2;
+  --heading-dark: #2E2150;
+  --accent-soft-text: #4A3A7A;
+
+  /* Neutrals / surfaces */
+  --bg: #F6F6FA;
+  --surface: #ffffff;
+  --surface-2: #FAFAFC;            /* subtle raised: table headers, subcategory chips */
+  --surface-3: #F3F4F7;            /* sunken: outlook canvas */
+  --border: #ECECF2;
+  --border-2: #E2E5EA;
+  --divider: #F2F2F7;
+  --divider-2: #F0F0F5;
+  --text: #1B1B22;
+  --text-2: #6B6B78;
+  --text-3: #52525E;
+  --muted: #9A9AA6;
+  --muted-2: #A6A6B2;
+  --muted-3: #B0B0BC;
+  --field-bg: #FCFCFE;
+  --scrollbar: #E0E0EA;
+  --scrollbar-hover: #CFCFE0;
+  --toggle-off: #D5D5E0;
+  --body-text-2: #3B3B46;          /* message subject / body secondary */
+  --body-text-3: #33333E;          /* mail body */
+
+  /* Category colours (brand — stable across themes) */
+  --cat-respond: #6C4CE6;
+  --cat-fyi: #2D9CDB;
+  --cat-news: #F2994A;
+  --cat-notif: #9AA4B2;
+  --cat-spam: #EB5757;
+
+  /* Status */
+  --success: #27AE60;
+  --success-text: #1F8A5B;
+  --success-bg: #EAF7F0;
+  --success-border: #CDE9D8;
+  --outlook: #0078D4;
+  --outlook-bg: #E8F0FB;
+  --outlook-bg-2: #EAF1FB;
+  --outlook-border: #CFE2F7;
+  --warning: #F2994A;
+  --warning-bg: #FEF4E7;
+  --danger: #EB5757;
+  --danger-bg: #FDECEC;
+  --danger-soft: #B0728A;
+
+  /* Layout */
+  --topbar-h: 60px;
+  --sidebar-w: 230px;
+  --rail-w: 248px;
+  --list-w: 392px;
+  --ol-folders-w: 200px;
+  --ol-list-w: 340px;
+
+  /* Radii */
+  --r-card: 16px;
+  --r-card-lg: 18px;
+  --r-btn: 999px;  /* pill-knoppen (Velt-look, 24/08) */
+  --r-input: 10px;
+  --r-pill: 8px;
+  --r-tag: 7px;
+
+  --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --shadow-card: 0 12px 40px rgba(40, 30, 80, .07);
+  --shadow-draft: 0 8px 28px rgba(76, 52, 160, .07);
+  --shadow-pop: 0 24px 70px rgba(20, 12, 40, .3);
+  --shadow-toast: 0 12px 36px rgba(20, 12, 40, .32);
+}
+
+/* ── Dark theme ─────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --accent: #8166F0;
+  --accent-hover: #9079F4;
+  --purple-50: #1C1830;
+  --purple-100: #211B36;
+  --purple-150: #271F40;
+  --purple-200: #2C2349;
+  --purple-tint: #221C38;
+  --border-purple: #3C3266;
+  --border-purple-2: #34343F;
+  --heading-dark: #D9CDFF;
+  --accent-soft-text: #BBA9F4;
+
+  --bg: #0E0E15;
+  --surface: #181822;
+  --surface-2: #1F1F2B;
+  --surface-3: #121219;
+  --border: #2B2B39;
+  --border-2: #2B2B39;
+  --divider: #25252F;
+  --divider-2: #25252F;
+  --text: #ECECF2;
+  --text-2: #ADADBE;
+  --text-3: #9A9AAC;
+  --muted: #8B8B9C;
+  --muted-2: #7C7C8E;
+  --muted-3: #6E6E80;
+  --field-bg: #1E1E29;
+  --scrollbar: #33333F;
+  --scrollbar-hover: #44444F;
+  --toggle-off: #3A3A48;
+  --body-text-2: #C2C2D0;
+  --body-text-3: #D2D2DE;
+
+  --success-text: #4FD89A;
+  --success-bg: #15291E;
+  --success-border: #244634;
+  --outlook-bg: #142539;
+  --outlook-bg-2: #16263C;
+  --outlook-border: #284766;
+  --warning-bg: #2C2415;
+  --danger-bg: #2E1A1E;
+
+  --shadow-card: 0 12px 40px rgba(0, 0, 0, .45);
+  --shadow-draft: 0 8px 28px rgba(0, 0, 0, .4);
+  --shadow-pop: 0 24px 70px rgba(0, 0, 0, .6);
+  --shadow-toast: 0 12px 36px rgba(0, 0, 0, .55);
+}
+
+html { transition: background-color .2s ease; }
+body, .otto-card, .card, .topbar, .sidebar, .msg-list, .cat-rail, .reading, .main {
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}

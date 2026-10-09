@@ -1,0 +1,5 @@
+# Development + CI: the app itself plus the test and lint tooling.
+-r requirements.txt
+
+pytest==9.0.3
+ruff==0.15.20

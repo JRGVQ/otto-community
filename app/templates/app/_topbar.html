@@ -1,0 +1,127 @@
+{% from "app/_icons.html" import icon %}
+
+{# ── Eén navbar ───────────────────────────────────────────────────────────────
+   Merk → werkomgeving-wissel → navigatie (losse links + per werkomgeving twee
+   dropdown-knoppen, in het menu onderverdeeld per categorie) → hulp-links →
+   profiel → afmelden. Op mobiel (≤860px) blijven alleen hamburger, merk, thema
+   en avatar staan; de navigatie zit daar in de off-canvas lade. #}
+<div class="topbar">
+  <button class="nav-toggle" data-action="nav-toggle" aria-label="{{ _('Menu openen/sluiten') }}">☰</button>
+  <a class="brand" href="{{ url_for('web.inbox') }}">
+    <div class="logo-badge"><div class="core"></div></div>
+    <div class="name">Otto</div>
+  </a>
+
+  <nav class="tb-ws" aria-label="{{ _('Werkomgevingen') }}">
+    {% for w in workspaces %}
+      <a class="tn-ws-item {{ 'active' if w.active }}" href="{{ w.href }}"
+         title="{{ w.label }}" aria-label="{{ w.label }}" {{ 'aria-current=page' if w.active }}>{{ icon(w.icon, 17) }}</a>
+    {% endfor %}
+  </nav>
+  <span class="tn-sep tb-desktop"></span>
+
+  <nav class="tb-nav" aria-label="{{ _('Hoofdnavigatie') }}">
+    {% for n in nav_inline %}
+      <a class="tn-item {{ 'active' if n.active }}" href="{{ n.href }}" {{ 'aria-current=page' if n.active }}>
+        {{ icon(n.icon, 16) }}<span>{{ n.label }}</span>
+        {% if n.badge %}<span class="nav-badge">{{ n.badge }}</span>{% endif %}
+      </a>
+    {% endfor %}
+    {# Mega-menu's: per sectie een kolom met icoon-tegels + één regel uitleg. #}
+    {% for m in nav_menus %}
+      <details class="tn-drop" data-topnav-drop>
+        <summary class="tn-item {{ 'active' if m.active }}">
+          <span>{{ m.label }}</span>
+          {% if m.badge %}<span class="nav-badge">{{ m.badge }}</span>{% endif %}
+          {{ icon('chevron', 12) }}
+        </summary>
+        <div class="tn-mega" style="--mega-cols:{{ m.sections|length }};">
+          {% for s in m.sections %}
+            <div class="tn-col">
+              {% if s.title %}<div class="tn-menu-head">{{ s.title }}</div>{% endif %}
+              {% for it in s['items'] %}
+                <a class="tn-mega-item {{ 'active' if it.active }}" href="{{ it.href }}" {{ 'aria-current=page' if it.active }}>
+                  <span class="tn-ico">{{ icon(it.icon, 16) }}</span>
+                  <span class="tn-txt">
+                    <span class="tn-lbl">{{ it.label }}{% if it.badge %} <span class="nav-badge">{{ it.badge }}</span>{% endif %}</span>
+                    {% if it.desc %}<span class="tn-desc">{{ it.desc }}</span>{% endif %}
+                  </span>
+                </a>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </details>
+    {% endfor %}
+
+    {# Teams: eigen knop met subnavigatie per gedeelde mailbox — vanaf Business.
+       Zonder het plan blijft de knop zichtbaar met een slotje en een korte uitleg. #}
+    {% if teams_nav %}
+      <details class="tn-drop" data-topnav-drop>
+        <summary class="tn-item {{ 'active' if teams_nav.active }}">
+          {{ icon('teams', 16) }}<span>Teams</span>
+          {{ icon('chevron', 12) }}
+        </summary>
+        <div class="tn-mega tn-mega-teams">
+          <div class="tn-col">
+            {% if teams_nav.entitled %}
+              <a class="tn-mega-item" href="{{ teams_nav.overview }}">
+                <span class="tn-ico">{{ icon('teams', 16) }}</span>
+                <span class="tn-txt">
+                  <span class="tn-lbl">{{ _('Teams-overzicht') }}</span>
+                  <span class="tn-desc">{{ _('Alle gedeelde mailboxen op een rij') }}</span>
+                </span>
+              </a>
+              {% for mb in teams_nav.mailboxes %}
+                <div class="tn-team">
+                  <a class="tn-mega-item" href="{{ mb.inbox }}">
+                    <span class="tn-ico">{{ icon('inbox', 16) }}</span>
+                    <span class="tn-txt"><span class="tn-lbl">{{ mb.label }}</span></span>
+                  </a>
+                  <div class="tn-sub">
+                    <a href="{{ mb.inbox }}">{{ _('Inbox') }}</a>
+                    <a href="{{ mb.analyse }}">{{ _('Analyse') }}</a>
+                    <a href="{{ mb.settings }}">{{ _('Instellingen') }}</a>
+                  </div>
+                </div>
+              {% else %}
+                <div class="tn-note">
+                  {{ _('Nog geen gedeelde mailbox.') }}
+                  <a href="{{ teams_nav.integrations }}">{{ _('Voeg er één toe bij Integraties →') }}</a>
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+      </details>
+    {% endif %}
+  </nav>
+
+  <div class="spacer"></div>
+
+  <button class="theme-toggle" data-action="theme-toggle" aria-label="{{ _('Licht/donker thema') }}" style="margin-right:4px;"><span class="t-moon">🌙</span><span class="t-sun">☀</span></button>
+  {% if is_user and provider_name %}
+    <div class="pill-connected"><span class="dot" style="background:var(--success);"></span> {{ _('Verbonden') }} · {{ provider_name }}</div>
+  {% endif %}
+
+  {# Hulp: support, rondleiding, documentatie — afmelden staat rechts al voluit. #}
+  <nav class="tb-help" aria-label="{{ _('Hulp') }}">
+    {% for a in account_nav if a.key != 'logout' %}
+      <a class="tn-ws-item {{ 'active' if a.active }}" href="{{ a.href }}" title="{{ a.label }}" aria-label="{{ a.label }}"
+         {% if a.external %}target="_blank" rel="noopener"{% endif %}>{{ icon(a.icon, 16) }}</a>
+    {% endfor %}
+  </nav>
+
+  <div style="display:flex; align-items:center; gap:10px;">
+    <a class="user-link" href="{{ url_for('web.settings') }}" title="{{ _('Mijn profiel & instellingen') }}"
+       style="display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit;">
+      <div class="user-meta">
+        <div class="nm">{{ me.name }}</div>
+        <div class="sub">{{ me.organization.name if me.organization else 'Otto' }} · {{ my_role }}</div>
+      </div>
+      <div class="avatar avatar-36" style="background:{{ me.avatar_color }};">{{ me.initials }}</div>
+    </a>
+    <a class="topbar-logout" href="{{ url_for('auth.logout') }}" title="{{ _('Afmelden') }}"
+       style="display:inline-flex; align-items:center; gap:5px; color:var(--muted); font-size:13px; font-weight:600; text-decoration:none; padding:6px 8px; white-space:nowrap;">{{ _('Afmelden') }} <span style="font-size:16px;">⎋</span></a>
+  </div>
+</div>

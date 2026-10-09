@@ -1,0 +1,55 @@
+{% from "app/_icons.html" import icon %}
+
+{# ── Werkomgevingen ──────────────────────────────────────────────────────────
+   Smalle strip met alleen iconen: Postvak, Beheer en (voor de platform-eigenaar)
+   Platform, met account en hulp onderaan. Dit haalt de omgevingswissel uit de topbar
+   én de account-items uit de schermlijst, zodat de zijbalk alleen schermen toont. #}
+<nav class="ws-rail" aria-label="{{ _('Werkomgevingen') }}">
+  <div class="ws-group">
+    {% for w in workspaces %}
+      <a class="ws-item {{ 'active' if w.active }}" href="{{ w.href }}"
+         title="{{ w.label }}" aria-label="{{ w.label }}"
+         {{ 'aria-current=page' if w.active }}>{{ icon(w.icon, 20) }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="ws-spacer"></div>
+
+  <div class="ws-group">
+    {% for a in account_nav %}
+      <a class="ws-item {{ 'active' if a.active }}" href="{{ a.href }}"
+         title="{{ a.label }}" aria-label="{{ a.label }}"
+         {% if a.external %}target="_blank" rel="noopener"{% endif %}>{{ icon(a.icon, 18) }}</a>
+    {% endfor %}
+    <span class="ws-avatar" title="{{ me.name }} · {{ my_role }}" aria-hidden="true"
+          style="background:{{ me.avatar_color or '#6C4CE6' }};">{{ me.initials or '?' }}</span>
+  </div>
+</nav>
+
+{# ── Schermen van de actieve werkomgeving ───────────────────────────────── #}
+<div class="sidebar">
+  <button class="panel-expand" data-collapse="sidebar" aria-label="{{ _('Zijbalk tonen') }}" title="{{ _('Tonen') }}">›</button>
+  <div class="sidebar-head">
+    <span class="sidebar-title">{{ _('Postvak') if is_user else _('Beheer') }}</span>
+    <button class="col-toggle" data-collapse="sidebar" aria-label="{{ _('Zijbalk inklappen') }}" title="{{ _('Inklappen') }}">‹</button>
+  </div>
+
+  <div class="nav">
+    {% set ns = namespace(section=None, open=true) %}
+    {% for n in nav %}
+      {% if n.section and n.section != ns.section %}
+        {# Groepen vouwen open en dicht, en onthouden dat per groep (nav.js). #}
+        <button class="nav-section" data-nav-group="{{ n.section_key }}" aria-expanded="true">
+          <span>{{ n.section }}</span>{{ icon('chevron', 14) }}
+        </button>
+        {% set ns.section = n.section %}
+      {% endif %}
+      <a class="nav-item {{ 'active' if n.active }}" href="{{ n.href }}"
+         data-in-group="{{ n.section_key or '' }}" {{ 'aria-current=page' if n.active }}>
+        {{ icon(n.icon) }}
+        <span class="lbl">{{ n.label }}</span>
+        {% if n.badge %}<span class="nav-badge">{{ n.badge }}</span>{% endif %}
+      </a>
+    {% endfor %}
+  </div>
+</div>

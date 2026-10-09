@@ -1,0 +1,71 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Afwezigheid') }} — {{ _('Beheer') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:860px;">
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['toast','info','error'] %}
+      <div class="alert alert-{{ 'error' if cat=='error' else 'info' }}">{{ m }}</div>
+    {% endfor %}
+    <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ _('Afwezigheidsassistent') }}</div>
+    <div class="page-sub" style="margin-bottom:18px;">
+      {{ _('Beheer je out-of-office centraal. Otto verstuurt niets zelf — dit stelt Exchange\'s eigen automatische antwoord in, dat Exchange verzendt. Kies je "Ingepland", dan schakelt Outlook het zelf aan en uit op de gekozen momenten.') }}
+    </div>
+
+    {% if not ar_accounts %}
+      <div class="card" style="padding:18px;">
+        <div style="font-size:13px; color:var(--muted);">{{ _('Nog geen gekoppeld Outlook-postvak. Koppel je postvak via Beheer → E-mailkoppeling; de afwezigheidsassistent werkt voorlopig alleen voor Outlook.') }}</div>
+      </div>
+    {% endif %}
+
+    {% for acct in ar_accounts %}
+      {% set s = ar_settings.get(acct.id) %}
+      <div class="card" style="padding:18px; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+          <strong style="font-size:14px;">{{ acct.email }}</strong>
+          {% if s and s.status != 'disabled' %}<span class="pill pill-concept">{{ _('Actief') }}</span>{% endif %}
+          {% if s and s.push_state == 'pending' %}<span class="pill">{{ _('wordt doorgezet…') }}</span>
+          {% elif s and s.push_state == 'error' %}<span class="pill" style="color:var(--danger);" title="{{ s.last_error }}">{{ _('fout') }}</span>
+          {% elif s and s.push_state == 'synced' %}<span class="pill" style="color:var(--muted);">{{ _('gesynchroniseerd') }}</span>{% endif %}
+        </div>
+        <form method="post" action="{{ url_for('web.admin_autoreply_save') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="account_id" value="{{ acct.id }}">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+            <div style="flex:1; min-width:180px;">
+              <label class="lbl">{{ _('Status') }}</label>
+              <select class="input" name="status">
+                <option value="disabled" {{ 'selected' if not s or s.status=='disabled' }}>{{ _('Uit') }}</option>
+                <option value="always" {{ 'selected' if s and s.status=='always' }}>{{ _('Altijd aan') }}</option>
+                <option value="scheduled" {{ 'selected' if s and s.status=='scheduled' }}>{{ _('Ingepland') }}</option>
+              </select>
+            </div>
+            <div style="flex:1; min-width:160px;">
+              <label class="lbl">{{ _('Externe ontvangers') }}</label>
+              <select class="input" name="external_audience">
+                <option value="all" {{ 'selected' if not s or s.external_audience=='all' }}>{{ _('Iedereen') }}</option>
+                <option value="contactsOnly" {{ 'selected' if s and s.external_audience=='contactsOnly' }}>{{ _('Alleen contacten') }}</option>
+                <option value="none" {{ 'selected' if s and s.external_audience=='none' }}>{{ _('Alleen intern') }}</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+            <div style="flex:1; min-width:200px;">
+              <label class="lbl">{{ _('Van') }} <span style="color:var(--muted); font-weight:400;">· {{ _('alleen bij Ingepland') }}</span></label>
+              <input class="input" type="datetime-local" name="scheduled_start" value="{{ s.scheduled_start.strftime('%Y-%m-%dT%H:%M') if s and s.scheduled_start }}">
+            </div>
+            <div style="flex:1; min-width:200px;">
+              <label class="lbl">{{ _('Tot') }}</label>
+              <input class="input" type="datetime-local" name="scheduled_end" value="{{ s.scheduled_end.strftime('%Y-%m-%dT%H:%M') if s and s.scheduled_end }}">
+            </div>
+          </div>
+          <label class="lbl">{{ _('Bericht voor interne ontvangers') }}</label>
+          <textarea class="textarea" name="internal_reply_html" rows="4" placeholder="{{ _('Ik ben afwezig tot …') }}">{{ s.internal_reply_html if s and s.internal_reply_html }}</textarea>
+          <label class="lbl" style="margin-top:10px;">{{ _('Bericht voor externe ontvangers') }} <span style="color:var(--muted); font-weight:400;">· {{ _('optioneel; anders hetzelfde') }}</span></label>
+          <textarea class="textarea" name="external_reply_html" rows="4" placeholder="{{ _('I am currently out of office …') }}">{{ s.external_reply_html if s and s.external_reply_html }}</textarea>
+          <button class="btn btn-primary" style="height:40px; margin-top:12px;" {{ 'disabled' if not can_manage_autoreplies }}>{{ _('Opslaan') }}</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

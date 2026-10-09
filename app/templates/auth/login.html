@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Aanmelden') }} — Otto{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <a class="auth-brand" href="{{ url_for('public.home') }}">
+      <div class="logo-badge"><div class="core"></div></div>
+      <div class="name">Otto</div>
+    </a>
+    <div class="auth-box">
+      <div style="font-size:24px; font-weight:800; letter-spacing:-.02em; margin-bottom:6px;">{{ _('Welkom terug') }}</div>
+      <div style="font-size:14px; color:var(--text-2); line-height:1.55; margin-bottom:22px;">{{ _('Meld je aan om je opgeruimde inbox en concepten te bekijken.') }}</div>
+
+      {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['error','info'] %}
+        <div class="alert alert-{{ cat }}">{{ m }}</div>
+      {% endfor %}
+
+      <form method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="label">{{ _('E-mailadres') }}</div>
+        {{ form.email(class="input", type="email", placeholder=_('jij@bedrijf.be'), autocomplete="email", autocapitalize="none", autocorrect="off", spellcheck="false") }}
+        {% for e in form.email.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+
+        <div style="display:flex; align-items:baseline; justify-content:space-between; margin-top:16px;">
+          <div class="label" style="margin:0;">{{ _('Wachtwoord') }}</div>
+          <a href="{{ url_for('auth.forgot_password') }}" style="font-size:12.5px; color:var(--accent); font-weight:700;">{{ _('Wachtwoord vergeten?') }}</a>
+        </div>
+        {{ form.password(class="input", placeholder="••••••••", autocomplete="current-password") }}
+        {% for e in form.password.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+
+        <label style="display:flex; align-items:center; gap:8px; margin-top:16px; font-size:13px; color:var(--text-2); cursor:pointer;">
+          {{ form.remember() }} {{ _('Aangemeld blijven') }}
+        </label>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; height:46px; margin-top:20px; font-size:15px;">{{ _('Aanmelden') }} →</button>
+      </form>
+
+      <div class="divider-or">{{ _('of') }}</div>
+      <a class="sso-btn" href="{{ url_for('auth.sso_login') }}"><span class="provider-tag" style="width:22px;height:22px;border-radius:5px;background:#6C4CE6;font-size:11px;">◆</span> {{ _('Aanmelden met je bedrijfs-SSO') }}</a>
+    </div>
+
+    {% if config.REGISTRATION_OPEN %}
+    <div style="text-align:center; font-size:13.5px; color:var(--text-2); margin-top:18px;">
+      {{ _('Nog geen account?') }} <a href="{{ url_for('auth.register') }}" style="color:var(--accent); font-weight:700;">{{ _('Maak er een') }}</a>
+    </div>
+    {% endif %}
+    {% if config.DEBUG %}
+    <div style="text-align:center; font-size:12px; color:var(--muted); margin-top:14px;">
+      {{ _('Demo-login:') }} <strong>demo@example.com</strong> · <strong>otto-demo</strong>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

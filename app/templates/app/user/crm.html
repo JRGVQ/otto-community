@@ -1,0 +1,71 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('CRM') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:980px;">
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['toast','info','error'] %}
+      <div class="alert alert-{{ 'error' if cat=='error' else 'info' }}">{{ m }}</div>
+    {% endfor %}
+
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em; flex:1;">{{ _('CRM') }}</div>
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('web.crm_projects') }}">{{ _('Projecten') }} →</a>
+    </div>
+    <div class="page-sub">{{ _('Otto bouwt automatisch een adresboek op uit je mailverkeer. Geef een bedrijf of contact een standaardcategorie: mail van hen gaat dan altijd daar in — zonder AI.') }}</div>
+
+    <div style="font-size:12.5px; color:var(--muted-3); margin:10px 0 16px;">
+      {% trans nc=company_count, np=contact_count %}{{ nc }} bedrijven · {{ np }} contacten{% endtrans %}
+    </div>
+
+    {% for company in companies %}
+      <div class="card" style="padding:16px 18px; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div style="width:34px; height:34px; border-radius:9px; background:var(--purple-100); color:var(--accent);
+                      display:flex; align-items:center; justify-content:center; font-weight:800; flex:none;">
+            {{ (company.display_name[:1] or '?')|upper }}
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; font-size:14.5px;">{{ company.display_name }}</div>
+            <div style="font-size:12px; color:var(--muted);">@{{ company.domain }}</div>
+          </div>
+          <label style="font-size:11.5px; color:var(--muted); font-weight:700;">{{ _('Standaardcategorie') }}</label>
+          <select class="input" style="height:34px; width:auto; padding:0 10px; flex:none;"
+                  data-action="crm-company-cat" data-id="{{ company.id }}">
+            <option value="">{{ _('— geen (AI beslist)') }}</option>
+            {% for c in cats %}
+              <option value="{{ c.id }}" {{ 'selected' if company.default_category_id == c.id }} style="color:{{ c.color }};">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {% set contacts = contacts_by_company.get(company.id, []) %}
+        {% if contacts %}
+          <div style="margin-top:12px; padding-left:44px; display:flex; flex-direction:column; gap:8px;">
+            {% for ct in contacts %}
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:0;">
+                  <span style="font-weight:600; font-size:13px;">{{ ct.display_name }}</span>
+                  <span style="font-size:11.5px; color:var(--muted);">· {{ ct.email }}</span>
+                  {% if ct.message_count %}<span style="font-size:11px; color:var(--muted-3);">· {% trans n=ct.message_count %}{{ n }} mails{% endtrans %}</span>{% endif %}
+                </div>
+                <select class="input" style="height:30px; width:auto; padding:0 8px; font-size:12px; flex:none;"
+                        data-action="crm-contact-cat" data-id="{{ ct.id }}">
+                  <option value="">{{ _('— erf van bedrijf') }}</option>
+                  {% for c in cats %}
+                    <option value="{{ c.id }}" {{ 'selected' if ct.default_category_id == c.id }}>{{ c.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="card" style="padding:22px; text-align:center; color:var(--muted);">
+        {{ _('Nog geen contacten. Zodra er mail binnenkomt, verschijnen de afzenders hier automatisch.') }}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{{ super() }}{% endblock %}

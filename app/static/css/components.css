@@ -1,0 +1,175 @@
+/* Reusable components — recreate the prototype's inline styles as classes. */
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); }
+.card-14 { border-radius: 14px; }
+.card-15 { border-radius: 15px; }
+.card-18 { border-radius: var(--r-card-lg); }
+.card-pad { padding: 20px 22px; }
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px;
+  border-radius: var(--r-btn); font-size: 13.5px; font-weight: 700; cursor: pointer; border: 1px solid transparent;
+  transition: background .15s, border-color .15s; }
+.btn-primary { background: var(--accent); color: #fff; border: none; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--surface); color: var(--accent-soft-text); border: 1px solid var(--border-purple-2); }
+.btn-secondary:hover { background: var(--purple-50); }
+.btn-ghost { background: var(--surface); color: var(--text-2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg); }
+.btn-danger-text { background: transparent; color: var(--danger); border: none; }
+.btn-send { height: 42px; padding: 0 20px; font-size: 14px; box-shadow: 0 6px 16px rgba(108,76,230,.28); }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 12.5px; border-radius: 9px; }
+.btn-discard { background: transparent; color: var(--danger-soft); border: none; height: 42px; padding: 0 16px; font-weight: 700; cursor: pointer; }
+.btn-discard:hover { color: var(--danger); }
+
+/* ── Tags, pills, badges ───────────────────────────────────────────────── */
+.tag { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+.tag-lg { font-size: 11.5px; padding: 4px 10px; border-radius: var(--r-tag); }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: var(--r-tag); }
+.pill-concept { color: var(--accent); background: var(--purple-150); }
+.pill-success { color: var(--success-text); background: var(--success-bg); }
+.pill-outlook { color: var(--outlook); background: var(--outlook-bg); }
+.pill-connected { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: var(--success-text); background: var(--success-bg); padding: 7px 12px; border-radius: 20px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.dot-9 { width: 9px; height: 9px; }
+.dot-sq { width: 8px; height: 8px; border-radius: 3px; flex: none; }
+
+/* ── Avatars ───────────────────────────────────────────────────────────── */
+.avatar { border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; }
+.avatar-38 { width: 38px; height: 38px; font-size: 13px; }
+.avatar-42 { width: 42px; height: 42px; font-size: 14px; }
+.avatar-36 { width: 36px; height: 36px; font-size: 14px; font-weight: 800; }
+.avatar-34 { width: 34px; height: 34px; font-size: 12px; }
+
+/* ── Inputs ────────────────────────────────────────────────────────────── */
+.input { width: 100%; height: 40px; border: 1px solid var(--border); border-radius: var(--r-input);
+  padding: 0 13px; font-size: 14px; color: var(--text); outline: none; background: var(--surface); }
+.input:focus { border-color: var(--accent); }
+.input-search { height: 38px; background: var(--bg); }
+.textarea { width: 100%; border: 1px solid var(--border); border-radius: 11px; padding: 14px 15px;
+  font-size: 14px; line-height: 1.65; color: var(--text); resize: vertical; outline: none; background: var(--field-bg); }
+.textarea:focus { border-color: var(--accent); }
+/* The placed concept-antwoord is written in Verdana Pro — preview matches what's sent. */
+#draft-text { font-family: 'Verdana Pro', Verdana, sans-serif; }
+.label { font-size: 12.5px; font-weight: 700; color: var(--text-2); margin-bottom: 7px; }
+
+/* ── Toggle switch ─────────────────────────────────────────────────────── */
+.toggle { width: 46px; height: 26px; border-radius: 13px; cursor: pointer; position: relative; flex: none;
+  background: var(--toggle-off); transition: background .18s; }
+.toggle.on { background: var(--accent); }
+.toggle .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .18s; }
+.toggle.on .knob { transform: translateX(20px); }
+/* Een toggle die niet aan kán staan (bv. concepten op een ruiscategorie): zichtbaar
+   uit, zodat het scherm niet iets belooft dat de server toch weigert. */
+.toggle.disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── Checkbox (tasks, perms, scopes) ───────────────────────────────────── */
+.check { width: 22px; height: 22px; border-radius: 7px; flex: none; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff;
+  background: var(--surface); border: 2px solid var(--toggle-off); }
+.check.on { background: var(--accent); border-color: var(--accent); }
+.check.locked { background: #B7A9F0; border-color: #B7A9F0; cursor: default; }
+.check.green.on { background: var(--success); border-color: var(--success); }
+
+/* ── Segmented control (Postvak / Beheer, tones) ───────────────────────── */
+.segmented { display: flex; background: var(--surface-2); border-radius: 11px; padding: 3px; gap: 2px; }
+.segmented a, .segmented button { flex: 1; text-align: center; padding: 6px 12px; border-radius: 8px;
+  font-size: 12.5px; font-weight: 700; cursor: pointer; color: #7A7A88; background: transparent; border: none; transition: all .14s; }
+.segmented .active { color: var(--heading-dark); background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+.tone { font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer;
+  color: var(--text-2); background: var(--purple-100); border: none; }
+.tone.active { color: #fff; background: var(--accent); }
+
+/* ── Toast ─────────────────────────────────────────────────────────────── */
+.toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: #221C33; color: #fff;
+  padding: 13px 20px; border-radius: 12px; font-size: 13.5px; font-weight: 600; box-shadow: var(--shadow-toast);
+  z-index: 50; display: flex; align-items: center; gap: 9px; }
+.toast .dot { background: #8B6BF5; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(28,20,46,.42); display: flex; align-items: center;
+  justify-content: center; z-index: 60; padding: 24px; }
+.modal { width: 520px; max-width: 100%; max-height: 88vh; overflow-y: auto; background: var(--surface); border-radius: 18px;
+  padding: 26px 26px 22px; box-shadow: var(--shadow-pop); }
+.color-swatch { width: 30px; height: 30px; border-radius: 9px; cursor: pointer; }
+.color-swatch.sel { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px currentColor; }
+
+/* Task modal: assignee picker. */
+.task-people { display: flex; flex-direction: column; gap: 2px; max-height: 180px; overflow-y: auto; margin-bottom: 8px; }
+.task-person { font-size: 13px; padding: 8px 11px; border-radius: 9px; cursor: pointer; }
+.task-person:hover { background: var(--bg); }
+.task-assignee-chip { align-items: center; gap: 10px; justify-content: space-between; font-size: 13px; font-weight: 600;
+  background: var(--purple-100); color: var(--accent-soft-text); border-radius: 10px; padding: 9px 13px; margin-bottom: 8px; }
+#task-important.on { background: #FCEFC7; border-color: #E2B100; color: #8A6D00; }
+
+/* Taken page: list filter pills, steps, card actions. */
+.task-list-pill { font-size: 12.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--muted); cursor: pointer; text-decoration: none; }
+.task-list-pill.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.task-step-line { display: flex; align-items: center; gap: 8px; }
+.task-step-line .done { text-decoration: line-through; color: var(--muted-3); }
+.step-check { width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid var(--border); flex: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; }
+.step-check.on { background: var(--accent); border-color: var(--accent); }
+.step-del { margin-left: auto; color: var(--muted-3); cursor: pointer; font-size: 13px; opacity: 0; }
+.task-step-line:hover .step-del { opacity: 1; }
+.step-add { border: none; background: transparent; font-size: 12.5px; color: var(--muted); padding: 4px 2px 4px 26px; outline: none; }
+.step-add:focus { color: var(--text); }
+.task-attach { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px; padding: 3px 8px; }
+.task-attach a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.task-attach .attach-del { color: var(--muted-3); cursor: pointer; font-weight: 800; }
+.task-attach-add { font-size: 11.5px; font-weight: 700; color: var(--muted); cursor: pointer; border: 1px dashed var(--border);
+  border-radius: 8px; padding: 3px 9px; }
+.task-attach-add:hover { color: var(--accent); border-color: var(--accent); }
+.task-actions { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.task-actions span { cursor: pointer; opacity: .5; font-size: 14px; }
+.task-actions span:hover { opacity: 1; }
+
+/* ── Logo ──────────────────────────────────────────────────────────────── */
+.logo-badge { border-radius: 11px; background: var(--accent); display: flex; align-items: center; justify-content: center; }
+.logo-badge .core { border-radius: 50%; background: var(--on-accent); }
+
+/* ── Demo banner ───────────────────────────────────────────────────────── */
+.demo-banner { flex: none; display: flex; align-items: center; justify-content: center; gap: 14px;
+  background: linear-gradient(90deg, #6C4CE6, #8B5CF0); color: #fff; font-size: 12.5px; font-weight: 600;
+  padding: 8px 16px; }
+.demo-banner a { color: #fff; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ── Theme toggle ──────────────────────────────────────────────────────── */
+.theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+  border-radius: 10px; border: 1px solid var(--border); background: var(--surface); cursor: pointer;
+  font-size: 15px; line-height: 1; color: var(--text); transition: background .15s, border-color .15s; }
+.theme-toggle:hover { background: var(--bg); }
+.theme-toggle .t-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .t-sun { display: inline; }
+:root[data-theme="dark"] .theme-toggle .t-moon { display: none; }
+#theme-fab { position: fixed; top: 18px; right: 18px; z-index: 80; box-shadow: var(--shadow-card); }
+body:has(.otto-shell) #theme-fab { display: none; }  /* app/owner use the in-bar toggle */
+
+/* ── Flash / form errors ───────────────────────────────────────────────── */
+.form-error { color: var(--danger); font-size: 12.5px; margin-top: 5px; }
+.alert { padding: 11px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+.alert-error { background: var(--danger-bg); color: var(--danger); }
+.alert-info { background: var(--purple-100); color: var(--heading-dark); }
+
+/* ── Language switcher (nav + app top bar) ─────────────────────────────── */
+.lang-switch { position: relative; display: inline-block; }
+.lang-switch > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 13px; font-weight: 600; user-select: none; transition: background .15s, border-color .15s; }
+.lang-switch > summary::-webkit-details-marker { display: none; }
+.lang-switch > summary:hover { background: var(--bg); }
+.lang-switch .lang-globe { font-size: 14px; line-height: 1; }
+.lang-switch .lang-current { letter-spacing: .04em; }
+.lang-switch .lang-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 90; min-width: 148px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-pop);
+  padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.lang-switch .lang-opt { display: block; padding: 8px 12px; border-radius: 8px; text-decoration: none;
+  color: var(--text); font-size: 13.5px; font-weight: 500; white-space: nowrap; }
+.lang-switch .lang-opt:hover { background: var(--bg); }
+.lang-switch .lang-opt.is-active { background: var(--purple-100); color: var(--accent); font-weight: 700; }

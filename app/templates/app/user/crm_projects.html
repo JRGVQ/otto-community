@@ -1,0 +1,58 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Projecten') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:1080px;">
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['toast','info','error'] %}
+      <div class="alert alert-{{ 'error' if cat=='error' else 'info' }}">{{ m }}</div>
+    {% endfor %}
+
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+      <a href="{{ url_for('web.crm') }}" style="font-size:13px; color:var(--muted); text-decoration:none;">← {{ _('CRM') }}</a>
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em; flex:1;">{{ _('Projecten') }}</div>
+    </div>
+    <div class="page-sub">{{ _('Groepeer mail per project. Sleep een bericht uit de lijst rechts op een project.') }}</div>
+
+    <form data-action="crm-project-new" style="display:flex; gap:8px; margin:14px 0; flex-wrap:wrap;">
+      <input class="input" name="name" placeholder="{{ _('bv. Website Acme') }}" style="flex:1; min-width:180px; max-width:320px;">
+      <button class="btn btn-secondary btn-sm">+ {{ _('Nieuw project') }}</button>
+    </form>
+
+    <div style="display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start;">
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        {% for p in projects %}
+          <div class="card crm-project-drop" data-project="{{ p.id }}" style="padding:16px 18px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="width:12px; height:12px; border-radius:50%; background:{{ p.color }}; flex:none;"></span>
+              <a href="{{ url_for('web.crm_project', project_id=p.id) }}"
+                 style="font-weight:700; font-size:15px; flex:1; text-decoration:none; color:inherit;">{{ p.name }}</a>
+              <span style="font-size:12px; color:var(--muted);">{% trans n=project_msg_counts.get(p.id, 0) %}{{ n }} mails{% endtrans %}</span>
+              <button class="btn btn-ghost btn-sm" style="color:var(--danger);" data-action="crm-project-delete"
+                      data-id="{{ p.id }}">✕</button>
+            </div>
+            <div class="crm-drop-hint" style="display:none; margin-top:8px; font-size:12px; color:var(--accent);">{{ _('Laat los om deze mail aan het project toe te voegen') }}</div>
+          </div>
+        {% else %}
+          <div class="card" style="padding:20px; color:var(--muted);">{{ _('Nog geen projecten. Maak er hierboven één aan.') }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="card" style="padding:14px 16px;">
+        <div style="font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted-3); margin-bottom:10px;">{{ _('Recente mail — sleep naar een project') }}</div>
+        <div style="display:flex; flex-direction:column; gap:6px; max-height:520px; overflow-y:auto;">
+          {% for msg in recent_messages %}
+            <div class="crm-drag-msg" draggable="true" data-message="{{ msg.id }}"
+                 style="padding:8px 10px; border:1px solid var(--border); border-radius:10px; cursor:grab; background:var(--surface);">
+              <div style="font-weight:600; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ msg.subject or _('(geen onderwerp)') }}</div>
+              <div style="font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ msg.sender or msg.sender_email }}</div>
+            </div>
+          {% else %}
+            <div style="font-size:12px; color:var(--muted-3);">{{ _('Geen recente mail.') }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{{ super() }}{% endblock %}

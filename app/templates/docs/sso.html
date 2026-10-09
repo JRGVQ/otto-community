@@ -1,0 +1,31 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}Login-SSO (OIDC){% endblock %}
+{% block doc %}
+<h1>{{ _('Login-SSO (OIDC)') }}</h1>
+<div class="sub">{{ _('Laat je medewerkers inloggen via de single sign-on van je bedrijf (Microsoft Entra, Google of Okta).') }}</div>
+
+<h2>{{ _('Hoe het werkt') }}</h2>
+<p>{{ _('Een medewerker gaat naar') }} <strong>{{ _('Aanmelden → "Aanmelden met je bedrijfs-SSO"') }}</strong> {{ _('en vult zijn werk-e-mailadres in. Otto herkent het domein en stuurt door naar jouw identiteitsprovider (IdP). Na succesvolle aanmelding wordt de gebruiker — indien nog niet aanwezig —') }} <strong>{{ _('automatisch aangemaakt') }}</strong> {{ _('in jouw omgeving (binnen je licentieplaatsen).') }}</p>
+<div class="note">{{ _('Otto verplaatst nooit een bestaand account van het ene bedrijf naar het andere. SSO werkt enkel binnen domeinen die jij toelaat.') }}</div>
+
+<h2>{{ _('Instellen (Eigenaar)') }}</h2>
+<p>{{ _('Open') }} <strong>{{ _('Integraties → "Eigen Microsoft/Google-app gebruiken (geavanceerd)"') }}</strong> {{ _('en vul onderaan het blok') }} <strong>{{ _('Login-SSO (OIDC)') }}</strong> {{ _('in:') }}</p>
+<ol class="steps-num">
+  <li><strong>Issuer-URL</strong> {{ _('van je IdP, bijvoorbeeld:') }}
+    <pre>Microsoft Entra:  https://login.microsoftonline.com/&lt;tenant-id&gt;/v2.0
+Google:           https://accounts.google.com
+Okta:             https://&lt;jouw-domein&gt;.okta.com</pre>
+  </li>
+  <li><strong>Client ID</strong> {{ _('en') }} <strong>Client secret</strong> {{ _('van een OIDC-app die je bij je IdP registreert.') }}</li>
+  <li><strong>{{ _('Toegestane e-maildomeinen') }}</strong> {{ _('(spatie- of kommagescheiden), bv.') }} <code>bedrijf.be dochter.be</code>.</li>
+  <li>{{ _('Vink') }} <strong>{{ _('SSO inschakelen') }}</strong> {{ _('aan en sla op.') }}</li>
+</ol>
+
+<h2>{{ _('Bij je IdP') }}</h2>
+<p>{{ _('Registreer een web-/OIDC-app met de') }} <strong>redirect-URI</strong> {{ _('die op de Otto-pagina staat, bv.') }} <code>https://otto.example.com/auth/sso/callback</code>{{ _(', en de scopes') }} <code>openid email profile</code>.</p>
+
+<h2>{{ _('Just-in-time gebruikers') }}</h2>
+<p>{{ _('Staat') }} <em>JIT</em> {{ _('aan, dan worden nieuwe medewerkers automatisch aangemaakt bij hun eerste SSO-login (als rol "Gebruiker").') }}</p>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('faq') }}">{{ _('Volgende: Veelgestelde vragen →') }}</a></p>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Niet gevonden') }} — Otto{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card" style="text-align:center;">
+    <div style="font-size:64px; font-weight:800; color:var(--accent); letter-spacing:-.03em;">404</div>
+    <div style="font-size:18px; font-weight:700; margin:6px 0 4px;">{{ _('Deze pagina bestaat niet.') }}</div>
+    <div style="font-size:14px; color:var(--text-2); margin-bottom:20px;">{{ _('Misschien is hij verplaatst of nooit aangemaakt.') }}</div>
+    <a class="btn btn-primary" href="{{ url_for('public.home') }}">{{ _('Terug naar start') }}</a>
+  </div>
+</div>
+{% endblock %}

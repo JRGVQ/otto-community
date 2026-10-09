@@ -1,0 +1,71 @@
+{# Category create/edit modal — hidden until opened by categories.js #}
+<div id="cat-modal" class="modal-overlay" style="display:none;">
+  <div class="modal pop" data-stop-propagation>
+    <div id="cat-modal-title" style="font-size:19px; font-weight:800; letter-spacing:-.01em; margin-bottom:18px;">{{ _('Categorie bewerken') }}</div>
+
+    <div class="label">{{ _('Naam') }}</div>
+    <input id="cat-name" class="input" style="margin-bottom:18px;" />
+
+    <div class="label">{{ _('Kleur') }}</div>
+    <div id="cat-colors" style="display:flex; gap:9px; margin-bottom:18px;">
+      {% for c in ['#6C4CE6','#2D9CDB','#F2994A','#27AE60','#EB5757','#9B51E0','#0EA5A4','#E11D74'] %}
+        <div class="color-swatch" data-color="{{ c }}" style="background:{{ c }}; color:{{ c }};"></div>
+      {% endfor %}
+    </div>
+
+    <div class="label">{{ _('AI-instructie (in gewone taal)') }}</div>
+    <textarea id="cat-ai" class="textarea" style="min-height:78px; margin-bottom:18px;" placeholder="{{ _('bv. Alles van mijn boekhouder of met \'factuur\' in het onderwerp.') }}"></textarea>
+
+    <div style="display:flex; align-items:center; margin-bottom:10px;">
+      <div class="label" style="flex:1; margin:0;">{{ _('Subcategorieën') }}</div>
+      <div id="cat-add-sub" style="font-size:12px; font-weight:700; color:var(--accent); cursor:pointer;">{{ _('+ Toevoegen') }}</div>
+    </div>
+    <div id="cat-subs" style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;"></div>
+
+    <div style="display:flex; align-items:center; gap:12px; padding:13px 15px; background:var(--bg); border-radius:11px; margin-bottom:22px;">
+      <div style="flex:1;">
+        <div style="font-size:13.5px; font-weight:700;">{{ _('Concepten genereren') }}</div>
+        <div style="font-size:12px; color:var(--muted);">{{ _('Otto schrijft een conceptantwoord voor mails in deze categorie.') }}</div>
+      </div>
+      <div id="cat-draft-toggle" class="toggle"><div class="knob"></div></div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:12px; padding:13px 15px; background:var(--bg); border-radius:11px; margin-bottom:14px;">
+      <div style="flex:1;">
+        <div style="font-size:13.5px; font-weight:700;">{{ _('Blijft in mijn inbox') }}</div>
+        <div style="font-size:12px; color:var(--muted);">{{ _('Uit? Dan verplaatst Otto deze mails naar een map (als automatisch opbergen aanstaat).') }}</div>
+      </div>
+      <div id="cat-keep-toggle" class="toggle on"><div class="knob"></div></div>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px; padding:13px 15px; background:var(--bg); border-radius:11px; margin-bottom:14px;">
+      <div style="flex:1;">
+        <div style="font-size:13.5px; font-weight:700;">{{ _('Dit is ruis') }}</div>
+        <div style="font-size:12px; color:var(--muted);">{{ _('Nieuwsbrieven en meldingen. Otto legt bulkmail hier meteen in zonder de AI te gebruiken, schrijft er nooit een concept voor, en laat je team met rust. Zet dit aan op één categorie.') }}</div>
+      </div>
+      <div id="cat-noise-toggle" class="toggle"><div class="knob"></div></div>
+    </div>
+
+    <div id="cat-folder-wrap" style="margin-bottom:22px; display:none;">
+      <div class="label">{{ _('Verplaatsen naar map') }}</div>
+      <input id="cat-folder" class="input" placeholder="{{ _('bv. Nieuwsbrieven — Otto maakt de map aan indien nodig') }}" />
+    </div>
+
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button id="cat-delete" class="btn btn-danger-text" style="display:none;">{{ _('Verwijderen') }}</button>
+      <span class="spacer"></span>
+      <button id="cat-cancel" class="btn btn-ghost">{{ _('Annuleren') }}</button>
+      <button id="cat-save" class="btn btn-primary">{{ _('Opslaan') }}</button>
+    </div>
+  </div>
+</div>
+
+{# Template for a subcategory editor row (cloned by JS) #}
+<template id="cat-sub-template">
+  <div class="cat-sub-row" style="border:1px solid var(--border); border-radius:11px; padding:11px 12px; background:var(--surface-2);">
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:7px;">
+      <input class="sub-name" placeholder="{{ _('Naam subcategorie (bv. Klanten)') }}" style="flex:1; height:34px; border:1px solid var(--border); border-radius:8px; padding:0 11px; font-size:13px; font-weight:600; outline:none;" />
+      <div class="sub-remove" style="width:30px; height:30px; border-radius:8px; flex:none; display:flex; align-items:center; justify-content:center; color:var(--danger-soft); font-size:16px; cursor:pointer; background:var(--surface); border:1px solid var(--border);">×</div>
+    </div>
+    <textarea class="sub-ai" placeholder="{{ _('AI-instructie voor deze subcategorie…') }}" style="width:100%; min-height:46px; border:1px solid var(--border); border-radius:8px; padding:8px 11px; font-size:12.5px; line-height:1.5; outline:none; resize:vertical;"></textarea>
+  </div>
+</template>

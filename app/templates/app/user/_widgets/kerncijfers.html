@@ -1,0 +1,7 @@
+{# Kerncijfers binnen de gekozen periode. #}
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+  <div><div style="font-size:28px; font-weight:800;">{{ w.data.total }}</div><div style="font-size:12.5px; color:var(--muted);">{{ _('mails') }}</div></div>
+  <div><div style="font-size:28px; font-weight:800;">{{ w.data.unread }}</div><div style="font-size:12.5px; color:var(--muted);">{{ _('ongelezen') }}</div></div>
+  <div><div style="font-size:28px; font-weight:800; color:var(--accent);">{{ w.data.concept }}</div><div style="font-size:12.5px; color:var(--muted);">{{ _('concepten klaar') }}</div></div>
+  <div><div style="font-size:28px; font-weight:800; color:var(--success-text);">{{ w.data.verzonden }}</div><div style="font-size:12.5px; color:var(--muted);">{{ _('verzonden') }}</div></div>
+</div>

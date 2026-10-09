@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ _('E-mailverificatie') }} — Otto{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="logo-badge"><div class="core"></div></div>
+      <div class="name">Otto</div>
+    </div>
+    <div class="auth-box" style="text-align:center;">
+      <div style="width:52px; height:52px; border-radius:14px; background:var(--danger-bg); color:var(--danger); display:inline-flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; margin-bottom:16px;">!</div>
+      <div style="font-size:20px; font-weight:800; margin-bottom:6px;">
+        {% if state == 'expired' %}{{ _('Deze link is verlopen') }}{% else %}{{ _('Ongeldige link') }}{% endif %}
+      </div>
+      <div style="font-size:14px; color:var(--text-2); line-height:1.6; margin-bottom:20px;">
+        {% if state == 'expired' %}{{ _('Verificatielinks verlopen na 24 uur. Vraag een nieuwe aan.') }}{% else %}{{ _('Deze bevestigingslink klopt niet. Registreer opnieuw of vraag een nieuwe link aan.') }}{% endif %}
+      </div>
+      <a class="btn btn-primary" style="width:100%; height:44px;" href="{{ url_for('auth.login') }}">{{ _('Naar aanmelden') }}</a>
+      <div style="margin-top:12px;"><a href="{{ url_for('auth.register') }}" style="font-size:13.5px; color:var(--accent); font-weight:700;">{{ _('Opnieuw registreren') }}</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

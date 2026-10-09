@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Otto">
+  <title>Otto logomark — mono white (knockout)</title>
+  <!-- Single-colour reversed mark: white badge with a transparent core.
+       Use on photos, the brand purple, or any dark surface. -->
+  <defs>
+    <mask id="core-knockout">
+      <rect width="64" height="64" rx="18" fill="#ffffff"/>
+      <circle cx="32" cy="32" r="11" fill="#000000"/>
+    </mask>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#ffffff" mask="url(#core-knockout)"/>
+</svg>

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Even wachten') }} — Otto{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card" style="text-align:center;">
+    <div style="font-size:64px; font-weight:800; color:var(--warning); letter-spacing:-.03em;">429</div>
+    <div style="font-size:18px; font-weight:700; margin:6px 0 4px;">{{ _('Te veel pogingen') }}</div>
+    <div style="font-size:14px; color:var(--text-2); margin-bottom:20px;">{{ _('Wacht even en probeer het zo opnieuw.') }}</div>
+    <a class="btn btn-primary" href="{{ url_for('auth.login') }}">{{ _('Terug naar aanmelden') }}</a>
+  </div>
+</div>
+{% endblock %}

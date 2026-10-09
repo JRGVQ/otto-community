@@ -1,0 +1,31 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Handtekeningen') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Handtekeningen') }}</h1>
+<div class="sub">{{ _('Bouw centrale e-mailhandtekeningen met een editor en kant-en-klare sjablonen, en kies ze in Outlook.') }}</div>
+
+<h2>{{ _('De editor en de sjablonen') }}</h2>
+<ol class="steps-num">
+  <li>{{ _('Ga naar') }} <strong>{{ _('Beheer → Handtekeningen') }}</strong>.</li>
+  <li>{{ _('Kies onder') }} <strong>{{ _('Begin met een sjabloon') }}</strong> {{ _('een ontwerp (Klassiek, Modern met logo, Compact of Met disclaimer) en klik') }} <strong>{{ _('Gebruik dit sjabloon') }}</strong>. {{ _('Het opent in de editor.') }}</li>
+  <li>{{ _('Bewerk vrij in de') }} <strong>{{ _('Editor') }}</strong>: {{ _('vet, cursief, links, afbeeldingen en tekstkleur via de werkbalk.') }}</li>
+  <li>{{ _('Voeg') }} <strong>{{ _('placeholders') }}</strong> {{ _('in (bv.') }} <code>{{ '{{naam}}' }}</code>, <code>{{ '{{functie}}' }}</code>, <code>{{ '{{telefoon}}' }}</code>{{ _('). Die worden per gebruiker automatisch ingevuld; lege velden verdwijnen.') }}</li>
+  <li>{{ _('Bepaal wie ze krijgt — per verzenddomein, per gebruiker of per Microsoft 365-groep — en klik') }} <strong>{{ _('Opslaan') }}</strong>.</li>
+</ol>
+<div class="note">{{ _('Naast de vaste velden kan je eigen variabelen maken (bv. een LinkedIn-URL) en hun waarde per gebruiker invullen.') }}</div>
+
+<h2>{{ _('In Otto') }}</h2>
+<p>{{ _('Otto zet de juiste handtekening automatisch onder elk concept-antwoord dat hij klaarzet — je hoeft niets te doen.') }}</p>
+
+<h2>{{ _('In Outlook kiezen') }}</h2>
+<p>{{ _('Met de Otto-invoegtoepassing kies je je handtekening terwijl je een mail opstelt:') }}</p>
+<ol class="steps-num">
+  <li>{{ _('Installeer de Otto-invoegtoepassing (zie') }} <a href="{{ docs_url('eigen-app') }}">{{ _('Eigen app koppelen') }}</a>{{ _(') of vraag je beheerder ze uit te rollen.') }}</li>
+  <li>{{ _('Open in Outlook een nieuw bericht en klik in de werkbalk op') }} <strong>{{ _('Otto-handtekening') }}</strong>.</li>
+  <li>{{ _('Klik') }} <strong>{{ _('Invoegen') }}</strong> {{ _('bij de gewenste handtekening. De') }} <em>{{ _('Aanbevolen') }}</em> {{ _('is dezelfde die Otto onder je concepten zet.') }}</li>
+  <li>{{ _('Zet') }} <strong>{{ _('Automatisch') }}</strong> {{ _('aan om je aanbevolen handtekening voortaan meteen bij een nieuw bericht te plaatsen.') }}</li>
+</ol>
+<div class="note">{{ _('Waarom via de invoegtoepassing en niet Outlooks eigen keuzelijst? Microsoft biedt geen ondersteunde manier om die lijst van buitenaf te vullen. De invoegtoepassing is dezelfde aanpak die CodeTwo en Exclaimer gebruiken, en werkt in de nieuwe Outlook en Outlook op het web.') }}</div>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('bedrijfskennis') }}">{{ _('Volgende: Bedrijfskennis') }} →</a></p>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Agenda & afspraken') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Agenda & afspraken') }}</h1>
+<div class="sub">{{ _('Vraagt een mail om een afspraak, dan zet Otto er echte vrije momenten uit je agenda in — geen verzonnen tijdstippen.') }}</div>
+
+<h2>{{ _('Waarom het uitmaakt') }}</h2>
+<p>{{ _('Zonder je agenda kan Otto wel een vriendelijke zin schrijven, maar geen tijdstip noemen zonder het te verzinnen. Dat is precies het soort fout dat je achteraf een excuus kost: een voorstel dat goed klinkt en gewoon bezet is. Met je agenda erbij kiest Otto uit momenten die echt vrij zijn.') }}</p>
+
+<h2>{{ _('Aanzetten') }}</h2>
+<ol class="steps-num">
+  <li>{{ _('Ga naar') }} <strong>{{ _('Instellingen') }}</strong> {{ _('en zet') }} <strong>{{ _('Vrije momenten voorstellen') }}</strong> {{ _('aan. Voor een gedeeld postvak staat dezelfde knop op het teamscherm.') }}</li>
+  <li>{{ _('Kies eventueel hoe lang een voorstel duurt. Standaard een halfuur.') }}</li>
+</ol>
+<div class="note">{{ _('Heb je je postvak gekoppeld vóór de agenda-functie bestond, dan dekt je toestemming ze nog niet. Otto zegt dat dan zelf bij Integraties: koppel je postvak één keer opnieuw en het werkt. Je mail blijft ondertussen gewoon lopen.') }}</div>
+
+<h2>{{ _('Wat Otto voorstelt') }}</h2>
+<ul>
+  <li>{{ _('Hoogstens drie momenten, gespreid over verschillende dagen — komt één dag niet uit, dan blijft er iets over.') }}</li>
+  <li>{{ _('Niets binnen de eerstvolgende twee uur: de ontvanger moet je mail nog kunnen lezen.') }}</li>
+  <li>{{ _('Alleen binnen je werkuren. Otto leest die uit Outlook zelf, dus wie om zeven uur begint of op woensdag vrij is, hoeft hier niets in te stellen.') }}</li>
+  <li>{{ _('Voorlopige afspraken tellen als bezet — die geef je niet weg aan een klant.') }}</li>
+</ul>
+
+<h2>{{ _('Wat Otto van je agenda leest') }}</h2>
+<p>{{ _('Alleen vrij of bezet. Titels, deelnemers en locaties worden niet opgehaald en komen dus ook nooit bij het AI-model terecht. Er wordt niets in je agenda gezet: een afspraak maak je zelf, zoals je gewend bent.') }}</p>
+<div class="note">{{ _('De functie staat standaard uit. Zet je ze niet aan, dan raadpleegt Otto je agenda nooit.') }}</div>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('taken') }}">{{ _('Volgende: Taken') }} →</a></p>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "owner/layout.html" %}
+{% block title %}{{ _('Platform — Overzicht') }}{% endblock %}
+{% set sm = {'active':(_('Actief'),'#1F8A5B','#EAF7F0'),'suspended':(_('Geschorst'),'#EB5757','#FDECEC'),'geen':(_('Geen'),'#9AA4B2','#F2F2F7')} %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:1000px;">
+    <div style="font-size:13px; font-weight:700; color:var(--muted);">{{ _('Otto Platform') }}</div>
+    <div style="font-size:28px; font-weight:800; letter-spacing:-.025em; margin:3px 0 22px;">{{ _('Overzicht') }}</div>
+
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:13px; margin-bottom:28px;">
+      {% for s in stats %}
+        <div class="card card-14" style="padding:16px 16px 14px;">
+          <div style="font-size:23px; font-weight:800; letter-spacing:-.02em; color:{{ s.color }};">{{ s.value }}</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:3px; line-height:1.35;">{{ s.label }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div style="display:flex; align-items:center; margin-bottom:12px;">
+      <div style="font-size:15px; font-weight:800; flex:1;">{{ _('Bedrijven') }}</div>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('owner.create_company') }}">+ {{ _('Nieuw bedrijf') }}</a>
+    </div>
+    <div class="table">
+      <div class="thead" style="grid-template-columns:2fr 1fr 1fr 1fr;">
+        <div>{{ _('Bedrijf') }}</div><div>{{ _('Gebruikers') }}</div><div>{{ _('Postvakken') }}</div><div>{{ _('Status') }}</div>
+      </div>
+      {% for r in rows %}
+        {% set st = sm.get(r.status, sm['geen']) %}
+        <a class="trow" style="grid-template-columns:2fr 1fr 1fr 1fr; text-decoration:none; color:inherit;" href="{{ url_for('owner.company_detail', org_id=r.org.id) }}">
+          <div style="min-width:0;">
+            <div class="nowrap" style="font-weight:700; font-size:13.5px;">{{ r.org.name }}{% if r.org.is_demo %} <span class="tag" style="color:var(--accent); background:var(--purple-150); font-size:10px;">{{ _('demo') }}</span>{% endif %}</div>
+            <div class="nowrap" style="font-size:12px; color:var(--muted);">{{ r.org.slug }}</div>
+          </div>
+          <div style="font-size:13px;">{{ r.users }}</div>
+          <div style="font-size:13px;">{{ r.mailboxes }}</div>
+          <div><span class="status-pill" style="color:{{ st[1] }}; background:{{ st[2] }};">{{ st[0] }}</span></div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

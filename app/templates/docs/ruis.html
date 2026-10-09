@@ -1,0 +1,26 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Ruis & vaste momenten') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Ruis & vaste momenten') }}</h1>
+<div class="sub">{{ _('Twee instellingen die minder inbox opleveren: nieuwsbrieven meteen wegzetten, en je mail op vaste momenten bekijken in plaats van de hele dag door.') }}</div>
+
+<h2>{{ _('Ruis wegzetten') }}</h2>
+<p>{{ _('Nieuwsbrieven en automatische meldingen dragen een uitschrijflink in hun kop, of komen van een no-reply-adres. Dat is een harde aanwijzing dat de mail naar een lijst ging en niet naar jou persoonlijk. Otto herkent dat zonder de AI te gebruiken en legt zulke mail meteen in je ruiscategorie: geen classificatie, geen concept, en bij een gedeeld postvak ook geen melding in je Teams-kanaal.') }}</p>
+<div class="note">{{ _('Dat scheelt in je AI-tegoed. Een postvak dat half uit mailings bestaat, betaalde tot nu toe voor elke mailing een volledige AI-behandeling.') }}</div>
+
+<h3>{{ _('Aanzetten') }}</h3>
+<ol class="steps-num">
+  <li>{{ _('Ga naar') }} <strong>{{ _('Categorieën') }}</strong>, {{ _('open de categorie waar je nieuwsbrieven in wil (of maak er een), en zet') }} <strong>{{ _('Dit is ruis') }}</strong> {{ _('aan.') }}</li>
+  <li>{{ _('Ga naar') }} <strong>{{ _('Instellingen') }}</strong> {{ _('en zet') }} <strong>{{ _('Ruis meteen wegzetten') }}</strong> {{ _('aan. Voor een gedeeld postvak staat dezelfde knop op het teamscherm.') }}</li>
+  <li>{{ _('Wil je die mail ook uit je inbox weg? Zet in dezelfde categorie') }} <strong>{{ _('Blijft in mijn inbox') }}</strong> {{ _('uit en kies een map.') }}</li>
+</ol>
+
+<h3>{{ _('Wat er niet als ruis geldt') }}</h3>
+<p>{{ _('Een mail in een gesprek waar al aan gewerkt is — je hebt geantwoord, of hij is aan iemand toegewezen — blijft altijd gewoon behandeld, ook als er een uitschrijflink in staat. Een bevestigingsmail in een lopend dossier verdwijnt dus niet. En omdat het filter uit staat tot je zelf een categorie als ruis aanduidt, verandert er niets zolang je er niets mee doet.') }}</p>
+
+<h2>{{ _('Vaste momenten') }}</h2>
+<p>{{ _('Met') }} <strong>{{ _('Toon mijn inbox op vaste momenten') }}</strong> {{ _('werk je een stapel af die niet verandert terwijl je bezig bent. Standaard om 9u en 17u; je kiest zelf welke uren. Wat later binnenkomt, wacht op het volgende moment — met een teller bovenaan en een knop om het meteen te tonen.') }}</p>
+<div class="note">{{ _('Otto is niet je mailprogramma. Je mail komt gewoon aan in Outlook of Gmail; dit verandert alleen de volgorde waarin Otto ze aan jou toont. Er wordt dus niets tegengehouden of vertraagd.') }}</div>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('taken') }}">{{ _('Volgende: Taken') }} →</a></p>
+{% endblock %}

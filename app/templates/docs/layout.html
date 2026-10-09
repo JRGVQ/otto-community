@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{% block doc_title %}{{ _('Documentatie') }}{% endblock %} — Otto Docs{% endblock %}
+{% block body %}
+<div class="landing" style="min-height:100vh;">
+  <nav class="landing-nav">
+    <a class="auth-brand" href="{{ url_for('public.home') }}" style="margin:0; flex:1; text-decoration:none; color:inherit;">
+      <div class="logo-badge"><div class="core"></div></div>
+      <div class="name">Otto <span style="font-weight:600; color:var(--muted); font-size:15px;">· Docs</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="{{ url_for('public.home') }}">{{ _('Naar de app') }}</a>
+      <a href="{{ docs_url('aan-de-slag') }}">{{ _('Aan de slag') }}</a>
+    </div>
+        {% include '_lang_switcher.html' %}
+    <button class="theme-toggle" data-action="theme-toggle" aria-label="{{ _('Licht/donker thema') }}" style="margin-right:10px;"><span class="t-moon">🌙</span><span class="t-sun">☀</span></button>
+  </nav>
+
+  <div class="docs-wrap">
+    <aside class="docs-side">
+      {% for group in nav %}
+        <div class="grp">{{ group.grp }}</div>
+        {% for key, label in group['items'] %}
+          <a href="{{ docs_url(key) }}" class="{{ 'active' if active == key }}">{{ label }}</a>
+        {% endfor %}
+      {% endfor %}
+    </aside>
+    <main class="prose">
+      {% block doc %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

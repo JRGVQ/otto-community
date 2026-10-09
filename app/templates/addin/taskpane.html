@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otto</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style nonce="{{ csp_nonce }}">
+    :root { --accent:#6C4CE6; --muted:#6b7280; --line:#e6e6ef; --bg:#faf9ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif; color:#1c1b22; background:var(--bg); }
+    .wrap { padding:14px; }
+    .brand { font-weight:800; font-size:15px; color:var(--accent); margin-bottom:10px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:12px; }
+    .h { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:700; margin-bottom:6px; }
+    .pill { display:inline-block; background:#efeaff; color:#4b32b8; border-radius:999px; padding:3px 10px; font-weight:700; font-size:12.5px; }
+    .draft { white-space:pre-wrap; font-size:13px; }
+    .task { display:flex; gap:8px; align-items:center; padding:4px 0; font-size:13px; }
+    .task .due { color:var(--muted); font-size:12px; }
+    .snip { border-top:1px solid var(--line); padding:8px 0; }
+    .snip:first-child { border-top:0; }
+    .snip .t { font-weight:700; font-size:13px; }
+    .snip .b { color:#333; font-size:12.5px; white-space:pre-wrap; }
+    button.copy { border:1px solid var(--line); background:#fff; border-radius:8px; padding:3px 8px; font-size:12px; cursor:pointer; }
+    .muted { color:var(--muted); font-size:13px; }
+    a { color:var(--accent); font-weight:700; }
+    .sig-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-top:1px solid var(--line); }
+    .sig-row:first-child { border-top:0; }
+    .sig-row .nm { flex:1; font-weight:700; font-size:13px; }
+    .sig-row .def { font-size:10px; font-weight:800; color:var(--accent); background:#efeaff; border-radius:999px; padding:1px 7px; }
+    button.ins { border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:8px; padding:4px 12px; font-size:12px; font-weight:700; cursor:pointer; }
+    .auto { display:flex; align-items:center; gap:7px; font-size:12.5px; color:#333; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">Otto</div>
+    <div id="root"><div class="muted">Laden…</div></div>
+  </div>
+
+  <script nonce="{{ csp_nonce }}">
+    var LOGIN_URL = {{ login_url|tojson }};
+
+    function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+    function render(data){
+      var root = document.getElementById("root");
+      if (!data.authenticated){
+        root.innerHTML = '<div class="card"><div class="muted">Meld je eerst aan bij Otto om deze mail te bekijken.</div>'
+          + '<p><a href="' + esc(LOGIN_URL) + '" target="_blank" rel="noopener">Aanmelden bij Otto →</a></p></div>';
+        return;
+      }
+      if (!data.found){
+        root.innerHTML = '<div class="card"><div class="muted">Otto heeft deze mail nog niet verwerkt. Zodra Otto hem gesynchroniseerd en gesorteerd heeft, verschijnt hier de categorie, het concept en de taken.</div></div>';
+      } else {
+        var html = "";
+        if (data.category){
+          html += '<div class="card"><div class="h">Categorie</div><span class="pill">' + esc(data.category.name) + '</span></div>';
+        }
+        if (data.draft){
+          html += '<div class="card"><div class="h">Concept-antwoord</div><div class="draft">' + esc(data.draft.text) + '</div>'
+            + '<div style="margin-top:8px;"><button class="copy" data-copy="draft">Kopiëren</button></div></div>';
+        }
+        if (data.tasks && data.tasks.length){
+          html += '<div class="card"><div class="h">Taken</div>';
+          data.tasks.forEach(function(t){
+            html += '<div class="task"><span>' + (t.done ? "✓ " : "• ") + esc(t.title) + '</span>'
+              + (t.due ? '<span class="due">' + esc(t.due) + '</span>' : '') + '</div>';
+          });
+          html += '</div>';
+        }
+        root.innerHTML = html || '<div class="card"><div class="muted">Otto heeft deze mail verwerkt, maar er is nog geen categorie of concept.</div></div>';
+        var d = document.querySelector('[data-copy="draft"]');
+        if (d) d.addEventListener("click", function(){ copy(data.draft.text, d); });
+      }
+      // Snippets staan los van of de mail al verwerkt is — het team kan ze altijd gebruiken.
+      if (data.snippets && data.snippets.length){
+        var s = '<div class="card"><div class="h">Snippets</div>';
+        data.snippets.forEach(function(sn, i){
+          s += '<div class="snip"><div class="t">' + esc(sn.title) + '</div><div class="b">' + esc(sn.body) + '</div>'
+            + '<div style="margin-top:4px;"><button class="copy" data-snip="' + i + '">Kopiëren</button></div></div>';
+        });
+        s += '</div>';
+        document.getElementById("root").insertAdjacentHTML("beforeend", s);
+        var btns = document.querySelectorAll('[data-snip]');
+        btns.forEach(function(b){
+          b.addEventListener("click", function(){ copy(data.snippets[+b.getAttribute("data-snip")].body, b); });
+        });
+      }
+    }
+
+    function copy(text, btn){
+      var done = function(){ var o = btn.textContent; btn.textContent = "Gekopieerd ✓"; setTimeout(function(){ btn.textContent = o; }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); });
+      } else { fallbackCopy(text); done(); }
+    }
+    function fallbackCopy(text){
+      var ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta);
+      ta.select(); try { document.execCommand("copy"); } catch(e){} document.body.removeChild(ta);
+    }
+
+    function load(item){
+      var q = new URLSearchParams();
+      if (item){
+        if (item.subject && typeof item.subject === "string") q.set("subject", item.subject);
+        if (item.conversationId) q.set("conversation", item.conversationId);
+        try { if (item.from && item.from.emailAddress) q.set("from", item.from.emailAddress); } catch(e){}
+      }
+      fetch("/addin/context?" + q.toString(), { credentials: "include", headers: { "Accept": "application/json" } })
+        .then(function(r){ return r.ok ? r.json() : {authenticated:false}; })
+        .then(render)
+        .catch(function(){ render({authenticated:false}); });
+    }
+
+    // ── Handtekening kiezen & invoegen (compose) ──────────────────────────────
+    // Compose herken je aan setSelectedDataAsync op de body (die bestaat alleen tijdens
+    // het opstellen). Invoegen gaat bij voorkeur via setSignatureAsync (het echte
+    // handtekeninggebied, Outlook 1.10+), anders op de cursorpositie.
+    function isCompose(){
+      try { return !!(Office.context.mailbox.item.body &&
+        typeof Office.context.mailbox.item.body.setSelectedDataAsync === "function"); }
+      catch(e){ return false; }
+    }
+    function applySignature(html){
+      var body = Office.context.mailbox.item.body;
+      var opts = { coercionType: Office.CoercionType.Html };
+      if (typeof body.setSignatureAsync === "function"){
+        body.setSignatureAsync(html, opts, function(){});
+      } else {
+        body.setSelectedDataAsync(html, opts, function(){});
+      }
+    }
+    function autoOn(){
+      try { return Office.context.roamingSettings.get("otto_auto_sig") === true; } catch(e){ return false; }
+    }
+    function setAuto(on){
+      try {
+        Office.context.roamingSettings.set("otto_auto_sig", !!on);
+        Office.context.roamingSettings.saveAsync(function(){});
+      } catch(e){}
+    }
+
+    function renderSignatures(list){
+      if (!list || !list.length) return;
+      var def = null;
+      var s = '<div class="card"><div class="h">Handtekening invoegen</div>';
+      list.forEach(function(sig, i){
+        if (sig.default) def = sig;
+        s += '<div class="sig-row"><span class="nm">' + esc(sig.name) + '</span>'
+          + (sig.default ? '<span class="def">Aanbevolen</span>' : '')
+          + '<button class="ins" data-sig="' + i + '">Invoegen</button></div>';
+      });
+      s += '<label class="auto"><input type="checkbox" id="otto-auto"' + (autoOn() ? ' checked' : '')
+        + '> Automatisch mijn aanbevolen handtekening bij een nieuw bericht</label></div>';
+      document.getElementById("root").insertAdjacentHTML("afterbegin", s);
+      document.querySelectorAll('[data-sig]').forEach(function(b){
+        b.addEventListener("click", function(){
+          applySignature(list[+b.getAttribute("data-sig")].html);
+          var o = b.textContent; b.textContent = "Ingevoegd ✓"; setTimeout(function(){ b.textContent = o; }, 1500);
+        });
+      });
+      var chk = document.getElementById("otto-auto");
+      if (chk) chk.addEventListener("change", function(){ setAuto(chk.checked); });
+      // Auto: staat het aan, zet dan meteen de aanbevolen handtekening (één keer per open).
+      if (def && autoOn()){ applySignature(def.html); }
+    }
+    function loadSignatures(){
+      fetch("/addin/signatures", { credentials: "include", headers: { "Accept": "application/json" } })
+        .then(function(r){ return r.ok ? r.json() : {signatures:[]}; })
+        .then(function(d){ if (d.authenticated) renderSignatures(d.signatures); })
+        .catch(function(){});
+    }
+
+    if (typeof Office !== "undefined" && Office.onReady){
+      Office.onReady(function(){
+        try { load(Office.context.mailbox.item); } catch(e){ load(null); }
+        if (isCompose()) loadSignatures();
+      });
+    } else {
+      // Buiten Outlook (bijv. een directe test in de browser) tonen we gewoon de snippets.
+      load(null);
+    }
+  </script>
+</body>
+</html>

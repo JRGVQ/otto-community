@@ -1,0 +1,129 @@
+{# Eén-klik-verbind-popup — gedeeld door de onboarding en Integraties.
+
+   Elke knop/link die een OAuth-koppeling start krijgt `data-connect-popup="outlook|gmail"`.
+   Dit script vangt die klik af en toont eerst deze popup: wat er allemaal in die ene
+   toestemming meekomt en dat Otto daarna alles automatisch instelt. "Alles verbinden"
+   vervolgt dan de oorspronkelijke actie (form-submit of link). Zo blijft de echte flow
+   exact zoals hij was — de popup is puur uitleg + één klik.
+
+   Verwacht (via {% set %} vóór de include):
+     popup_admin_url  — URL van de Koppelen-en-goedkeuren-flow, of None. Alleen gezet
+                        wanneer de kijker een beheerder is, de gedeelde platform-app
+                        actief is én de organisatie nog niet is goedgekeurd. #}
+<div id="connect-popup" class="modal-overlay" style="display:none;">
+  <div class="modal pop" data-stop-propagation style="max-width:480px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+      <span id="connect-popup-tag" class="provider-tag" style="background:#0078D4;">O</span>
+      <div id="connect-popup-title" style="font-size:19px; font-weight:800; letter-spacing:-.01em;"></div>
+    </div>
+    <div style="font-size:13px; color:var(--muted); margin-bottom:16px;">
+      {{ _('Eén klik, één toestemmingsscherm — daarna stelt Otto alles automatisch voor je in. Je hoeft verder niets te configureren.') }}
+    </div>
+
+    {# Wat die ene klik allemaal verbindt, per provider. #}
+    <div data-connect-list="outlook" style="display:none; flex-direction:column; gap:9px; margin-bottom:16px;">
+      {% for item in [
+        _('Inbox automatisch gesorteerd — met gekleurde categorieën in Outlook zelf'),
+        _('Conceptantwoorden in jouw stijl, klaar in je map Concepten'),
+        _('Agenda: vrije momenten voorstellen en afspraken inplannen'),
+        _('Taken: automatisch naar Microsoft To Do en Planner'),
+        _('Gedeelde postvakken (bv. info@ of support@) waartoe je toegang hebt'),
+      ] %}
+        <div style="display:flex; gap:9px; font-size:13px; line-height:1.45;">
+          <span style="color:var(--success, #27AE60); font-weight:800;">✓</span><span>{{ item }}</span>
+        </div>
+      {% endfor %}
+    </div>
+    <div data-connect-list="gmail" style="display:none; flex-direction:column; gap:9px; margin-bottom:16px;">
+      {% for item in [
+        _('Inbox automatisch gesorteerd — met labels in Gmail zelf'),
+        _('Conceptantwoorden in jouw stijl, klaar in je map Concepten'),
+        _('Automatische synchronisatie — nieuwe mail wordt meteen verwerkt'),
+      ] %}
+        <div style="display:flex; gap:9px; font-size:13px; line-height:1.45;">
+          <span style="color:var(--success, #27AE60); font-weight:800;">✓</span><span>{{ item }}</span>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if popup_admin_url %}
+      {# Alleen zichtbaar bij de Microsoft-variant: een beheerder kan in dezelfde klik
+         de hele organisatie goedkeuren, zodat collega's daarna zonder toestemmings-
+         scherm koppelen. #}
+      <label id="connect-popup-admin" style="display:none; align-items:flex-start; gap:10px; padding:12px 14px; background:var(--bg); border-radius:11px; margin-bottom:16px; cursor:pointer;">
+        <input type="checkbox" id="connect-popup-admin-check" style="margin-top:2px; accent-color:var(--accent);">
+        <span style="font-size:12.5px; line-height:1.5;">
+          <strong>{{ _('Meteen goedkeuren voor mijn hele organisatie') }}</strong><br>
+          <span style="color:var(--muted);">{{ _('Jij bent beheerder: na deze ene goedkeuring koppelen collega\'s hun postvak zonder los toestemmingsscherm.') }}</span>
+        </span>
+      </label>
+    {% endif %}
+
+    <div style="font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:20px;">
+      🔒 {{ _('Otto krijgt géén verzendrecht — jij verstuurt altijd zelf. Loskoppelen kan op elk moment bij Integraties.') }}
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button type="button" id="connect-popup-go" class="btn btn-primary" style="flex:1; height:42px;">
+        {{ _('Alles verbinden met één klik') }} →
+      </button>
+      <button type="button" id="connect-popup-cancel" class="btn btn-secondary" style="height:42px;">{{ _('Annuleren') }}</button>
+    </div>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+  (function () {
+    var overlay = document.getElementById('connect-popup');
+    if (!overlay) return;
+    var NAMES = { outlook: 'Microsoft 365', gmail: 'Gmail' };
+    var TAGS = { outlook: { txt: 'O', bg: '#0078D4' }, gmail: { txt: 'G', bg: '#EA4335' } };
+    var ADMIN_URL = {{ (popup_admin_url or '') | tojson }};
+    var pending = null;  // the element whose connect we intercepted
+
+    function open(el) {
+      pending = el;
+      var p = el.getAttribute('data-connect-popup');
+      document.getElementById('connect-popup-title').textContent =
+        {{ _('Verbind %(p)s in één klik') | tojson }}.replace('%(p)s', NAMES[p] || p);
+      var tag = document.getElementById('connect-popup-tag');
+      tag.textContent = (TAGS[p] || TAGS.outlook).txt;
+      tag.style.background = (TAGS[p] || TAGS.outlook).bg;
+      overlay.querySelectorAll('[data-connect-list]').forEach(function (l) {
+        l.style.display = l.getAttribute('data-connect-list') === p ? 'flex' : 'none';
+      });
+      var admin = document.getElementById('connect-popup-admin');
+      if (admin) admin.style.display = (p === 'outlook' && ADMIN_URL) ? 'flex' : 'none';
+      overlay.style.display = 'flex';
+    }
+
+    function close() { overlay.style.display = 'none'; pending = null; }
+
+    function go() {
+      if (!pending) return;
+      var el = pending;
+      pending = null;  // laat de her-klik/redirect niet opnieuw onderscheppen
+      var adminCheck = document.getElementById('connect-popup-admin-check');
+      if (adminCheck && adminCheck.checked && ADMIN_URL) {
+        window.location.assign(ADMIN_URL);
+        return;
+      }
+      var form = el.closest('form');
+      if (form) { form.submit(); return; }
+      if (el.href) window.location.assign(el.href);
+    }
+
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest('[data-connect-popup]');
+      if (!el) return;
+      e.preventDefault();
+      open(el);
+    });
+    document.getElementById('connect-popup-go').addEventListener('click', go);
+    document.getElementById('connect-popup-cancel').addEventListener('click', close);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && overlay.style.display !== 'none') close();
+    });
+  })();
+</script>

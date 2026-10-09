@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Aanmelden met SSO') }} — Otto{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <a class="auth-brand" href="{{ url_for('public.home') }}">
+      <div class="logo-badge"><div class="core"></div></div>
+      <div class="name">Otto</div>
+    </a>
+    <div class="auth-box" style="padding:30px;">
+      <div style="font-size:22px; font-weight:800; letter-spacing:-.01em; margin-bottom:6px;">{{ _('Aanmelden met SSO') }}</div>
+      <div style="font-size:14px; color:var(--text-2); line-height:1.55; margin-bottom:20px;">
+        {{ _('Vul je werk-e-mailadres in. We sturen je door naar de single sign-on van je bedrijf.') }}
+      </div>
+
+      {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['error','info'] %}
+        <div class="alert alert-{{ cat }}">{{ m }}</div>
+      {% endfor %}
+
+      <form method="post" action="{{ url_for('auth.sso_login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="lbl">{{ _('Werk-e-mailadres') }}</label>
+        <input class="input" type="email" name="email" required placeholder="{{ _('jij@bedrijf.be') }}"
+               autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" autofocus>
+        <button type="submit" class="btn btn-primary" style="width:100%; height:44px; margin-top:14px;">{{ _('Doorgaan') }} →</button>
+      </form>
+    </div>
+    <div style="text-align:center; font-size:13.5px; color:var(--text-2); margin-top:18px;">
+      <a href="{{ url_for('auth.login') }}" style="color:var(--accent); font-weight:700;">{{ _('Terug naar aanmelden') }}</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

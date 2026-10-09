@@ -1,0 +1,329 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Instellingen') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:1160px;">
+    <div class="page-h">{{ _('Instellingen') }}</div>
+    <div class="page-sub">{{ _('Zet functies aan of uit. Otto past zich aan jouw voorkeuren aan.') }}</div>
+
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['toast','info','error'] %}
+      <div class="alert alert-info">{{ m }}</div>
+    {% endfor %}
+
+    {# Twee kolommen op brede schermen — de topbar-navigatie gaf de inhoud de volle
+       breedte, dus één smalle kolom liet rechts een leeg gat. #}
+    <div class="settings-cols">
+
+    {# ── Mijn profiel ─────────────────────────────────────────────────────── #}
+    <form method="post" action="{{ url_for('web.save_profile') }}" class="card" style="padding:22px; margin-bottom:20px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div style="font-size:15px; font-weight:800; margin-bottom:4px;">{{ _('Mijn profiel') }}</div>
+      <div style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">
+        {{ _('Deze gegevens vullen de placeholders in je e-mailhandtekening ({{functie}}, {{telefoon}}, {{mobiel}}, {{afdeling}}, {{locatie}}). Lege velden worden automatisch aangevuld vanuit je Microsoft 365-profiel bij het koppelen.') }}
+        {% if sig_central %}<br><strong>{{ _('Je organisatie beheert de handtekeningen centraal: een wijziging aan deze velden wordt eerst ter goedkeuring aan IT voorgelegd.') }}</strong>{% endif %}
+      </div>
+      {% if sig_pending %}
+        <div class="alert alert-info" style="font-size:12px; margin-bottom:14px;">
+          ⏳ {{ _('Je hebt een openstaand voorstel dat wacht op goedkeuring door IT.') }}
+        </div>
+      {% endif %}
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+        <div>
+          {# 'Functietitel', niet 'Functie': die msgid betekent op de marketingpagina
+             'feature' en zou hier de verkeerde vertaling meekrijgen. #}
+          <label class="lbl">{{ _('Functietitel') }}</label>
+          <input class="input" name="job_title" value="{{ me.job_title or '' }}" placeholder="{{ _('bv. Office manager') }}">
+        </div>
+        <div>
+          <label class="lbl">{{ _('Afdeling') }}</label>
+          <input class="input" name="department" value="{{ me.department or '' }}" placeholder="{{ _('bv. Sales') }}">
+        </div>
+        <div>
+          <label class="lbl">{{ _('Locatie / vestiging') }}</label>
+          <input class="input" name="office_location" value="{{ me.office_location or '' }}" placeholder="{{ _('bv. Gent') }}">
+        </div>
+        <div>
+          <label class="lbl">{{ _('Telefoon (vast)') }}</label>
+          <input class="input" name="phone" value="{{ me.phone or '' }}" placeholder="+32 9 000 00 00">
+        </div>
+        <div>
+          <label class="lbl">{{ _('Mobiel') }}</label>
+          <input class="input" name="mobile" value="{{ me.mobile or '' }}" placeholder="+32 470 00 00 00">
+        </div>
+        {# Eigen variabelen: org-brede (door de admin gedefinieerd) vul je hier voor
+           jezelf in; persoonlijke maak je hieronder zelf en zijn alleen van jou. #}
+        {% for pv in profile_vars %}
+          <div>
+            <label class="lbl">{{ pv.label }}
+              <span style="color:var(--muted); font-weight:400;">· {{ '{{' }}{{ pv.key }}{{ '}}' }}{% if pv.personal %} · {{ _('persoonlijk') }}{% endif %}</span>
+              {% if pv.personal %}
+                <button class="btn btn-ghost btn-sm" form="del-pvar-{{ pv.id }}"
+                        style="color:var(--danger); padding:0 4px; height:auto;" title="{{ _('Verwijderen') }}">✕</button>
+              {% endif %}
+            </label>
+            <input class="input" name="var-{{ pv.id }}" value="{{ pv.value }}">
+          </div>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-top:14px;">
+        <div style="flex:1; min-width:170px; max-width:260px;">
+          <label class="lbl">{{ _('Nieuwe persoonlijke variabele') }} <span style="color:var(--muted); font-weight:400;">· {{ _('alleen voor jou') }}</span></label>
+          <input class="input" name="new_var_label" placeholder="{{ _('bv. LinkedIn-URL') }}">
+        </div>
+        <div style="flex:1; min-width:170px; max-width:320px;">
+          <label class="lbl">{{ _('Waarde') }}</label>
+          <input class="input" name="new_var_value" placeholder="https://linkedin.com/in/…">
+        </div>
+      </div>
+      <button class="btn btn-primary" style="height:38px; margin-top:14px;">{{ _('Wijziging voorstellen') if sig_central else _('Profiel opslaan') }}</button>
+    </form>
+    {% for pv in profile_vars if pv.personal %}
+      <form id="del-pvar-{{ pv.id }}" method="post" style="display:none;"
+            action="{{ url_for('web.delete_profile_var', var_id=pv.id) }}"
+            data-confirm="{{ _('Variabele “%(label)s” verwijderen?')|format(label=pv.label) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      </form>
+    {% endfor %}
+
+    {# ── Antwoordvoorkeuren ────────────────────────────────────────────────── #}
+    <form method="post" action="{{ url_for('web.save_reply_prefs') }}" class="card" style="padding:22px; margin-bottom:20px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div style="font-size:15px; font-weight:800; margin-bottom:4px;">{{ _('Antwoordvoorkeuren') }}</div>
+      <div style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">{{ _('Otto zet één concept klaar in jouw voorkeurstoon. Je kan per mail altijd een andere toon kiezen.') }}</div>
+
+      <div class="label">{{ _('Voorkeurstoon') }}</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 18px;">
+        {% for t in tones %}
+          <label style="cursor:pointer;">
+            <input type="radio" name="tone" value="{{ t.key }}" style="display:none;"
+                   {{ 'checked' if (style and style.tone == t.key) or (not style and t.key == 'neutraal') }}>
+            <span class="pill" style="padding:8px 14px; font-weight:700; border:1px solid var(--border);
+                  {{ 'background:var(--accent); color:#fff; border-color:var(--accent);' if (style and style.tone == t.key) or (not style and t.key == 'neutraal') }}">{{ t.label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+
+      <div class="label">{{ _('Standaard antwoord') }} <span style="font-weight:500; color:var(--muted);">{{ _('— optioneel') }}</span></div>
+      <div style="font-size:12px; color:var(--muted); margin:2px 0 6px;">{{ _('Een vaste aanpak die Otto bij elk concept toepast. Bijv. “Sluit altijd af met een voorstel voor een korte call.”') }}</div>
+      <textarea name="default_reply" class="input" rows="3" style="resize:vertical; min-height:74px;" placeholder="{{ _('Bijv. altijd vriendelijk, kort, en eindig met een concrete volgende stap.') }}">{{ style.default_reply if style and style.default_reply else '' }}</textarea>
+
+      <div class="label" style="margin-top:18px;">{{ _('Handtekening') }} <span style="font-weight:500; color:var(--muted);">{{ _('— komt onderaan je concepten') }}</span></div>
+      <textarea name="signature" class="input" rows="3" style="resize:vertical; min-height:74px;" placeholder="{{ _('Met vriendelijke groet,') }}&#10;{{ me.name }}">{{ style.signature if style and style.signature else '' }}</textarea>
+
+      <hr style="border:none; border-top:1px solid var(--border); margin:20px 0 16px;">
+
+      {# ── Automatische opvolging ── #}
+      <label class="set-inline">
+        <input type="checkbox" name="follow_up_enabled" {{ 'checked' if style and style.follow_up_enabled }}>
+        <span>
+          <span class="set-inline-lbl">{{ _('Automatische opvolging') }}</span>
+          <span class="set-inline-desc">{{ _('Kreeg een verzonden mail geen antwoord? Otto zet een beleefd opvolg-concept klaar (je verstuurt zelf).') }}</span>
+        </span>
+      </label>
+      <div class="label" style="margin-top:12px;">{{ _('Na hoeveel dagen zonder antwoord') }}</div>
+      <input type="number" name="follow_up_days" min="1" max="60" class="input" style="width:120px; height:38px;"
+             value="{{ style.follow_up_days if style and style.follow_up_days else 3 }}">
+
+      {# ── Concepten opruimen ── #}
+      <div class="label" style="margin-top:18px;">{{ _('Onverstuurde concepten verwijderen na') }} <span style="font-weight:500; color:var(--muted);">{{ _('— dagen (leeg = nooit)') }}</span></div>
+      <input type="number" name="draft_ttl_days" min="1" max="365" class="input" style="width:120px; height:38px;"
+             value="{{ style.draft_ttl_days if style and style.draft_ttl_days else '' }}" placeholder="{{ _('nooit') }}">
+
+      {# ── Automatisch opruimen inbox ── #}
+      <label class="set-inline" style="margin-top:18px;">
+        <input type="checkbox" name="auto_folder_enabled" {{ 'checked' if style and style.auto_folder_enabled }}>
+        <span>
+          <span class="set-inline-lbl">{{ _('Mail automatisch opbergen in mappen') }}</span>
+          <span class="set-inline-desc">{{ _('Categorieën die niet in je inbox blijven, verplaatst Otto naar de map die je per categorie kiest.') }}</span>
+        </span>
+      </label>
+
+      {# ── Ruisfilter ── #}
+      <label class="set-inline" style="margin-top:18px;">
+        <input type="checkbox" name="noise_filter_enabled" {{ 'checked' if style and style.noise_filter_enabled }}>
+        <span>
+          <span class="set-inline-lbl">{{ _('Ruis meteen wegzetten') }}</span>
+          <span class="set-inline-desc">{{ _('Nieuwsbrieven en meldingen (mail met een uitschrijflink of van een no-reply-adres) gaan meteen naar je ruiscategorie — zonder AI, zonder concept. Dat scheelt in je AI-tegoed. Werkt zodra je één categorie als ruis hebt aangeduid.') }}</span>
+        </span>
+      </label>
+
+      {# ── Digest-modus ── #}
+      <label class="set-inline" style="margin-top:18px;">
+        <input type="checkbox" name="digest_mode" {{ 'checked' if style and style.digest_mode }}>
+        <span>
+          <span class="set-inline-lbl">{{ _('Toon mijn inbox op vaste momenten') }}</span>
+          <span class="set-inline-desc">{{ _('Je werkt een stapel af die niet verandert terwijl je bezig bent. Wat later binnenkomt, wacht op het volgende moment — met altijd een knop om het meteen te tonen. Je mail komt gewoon aan in Outlook of Gmail; dit verandert alleen wat Otto je toont.') }}</span>
+        </span>
+      </label>
+      <div class="label" style="margin-top:12px;">{{ _('Momenten') }} <span style="font-weight:500; color:var(--muted);">{{ _('— uren, bv. 9,17') }}</span></div>
+      <input name="digest_hours" class="input" style="width:160px; height:38px;"
+             value="{{ style.digest_hours or '' }}" placeholder="9,17">
+
+      {# ── Agenda ── #}
+      <label class="set-inline" style="margin-top:18px;">
+        <input type="checkbox" name="propose_slots_enabled" {{ 'checked' if style and style.propose_slots_enabled }}>
+        <span>
+          <span class="set-inline-lbl">{{ _('Vrije momenten voorstellen') }}</span>
+          <span class="set-inline-desc">{{ _('Vraagt een mail om een afspraak, dan zet Otto er echte vrije momenten uit je agenda in — hoogstens drie, gespreid over dagen. Alleen je vrij/bezet wordt gelezen: nooit de titel of de deelnemers van een afspraak.') }}</span>
+        </span>
+      </label>
+      <div class="label" style="margin-top:12px;">{{ _('Duur van een voorstel') }} <span style="font-weight:500; color:var(--muted);">{{ _('— minuten (leeg = 30)') }}</span></div>
+      <input type="number" name="meeting_minutes" min="5" max="480" class="input" style="width:120px; height:38px;"
+             value="{{ style.meeting_minutes if style and style.meeting_minutes else '' }}" placeholder="30">
+
+      {# ── Toezeggingen ── #}
+      <label class="set-inline" style="margin-top:18px;">
+        <input type="checkbox" name="commitments_enabled" {{ 'checked' if style and style.commitments_enabled }}>
+        <span>
+          <span class="set-inline-lbl">{{ _('Toezeggingen omzetten in taken') }}</span>
+          <span class="set-inline-desc">{{ _('Schrijf je "ik bezorg je dat morgen", dan zet Otto daar een taak met deadline van. Alleen als er een belofte én een termijn in dezelfde zin staan — liever een gemiste toezegging dan een taak die je nooit gemaakt hebt.') }}</span>
+        </span>
+      </label>
+
+      {# ── Vergadertranscripties ── #}
+      <label class="set-inline" style="margin-top:18px;">
+        <input type="checkbox" name="transcripts_enabled" {{ 'checked' if style and style.transcripts_enabled }}>
+        <span>
+          <span class="set-inline-lbl">{{ _('Actiepunten uit vergadertranscripties') }}</span>
+          <span class="set-inline-desc">{{ _('Laat Teams een transcriptie maken, dan haalt Otto er de actiepunten uit en zet ze op je takenlijst (lijst "Vergadering"). Geen opname, geen notulen-bot — alleen de transcripties die je zelf al laat maken. Vereist eenmalige beheerder-toestemming voor de transcriptie-rechten.') }}</span>
+        </span>
+      </label>
+
+      <button type="submit" class="btn btn-primary" style="height:40px; margin-top:18px;">{{ _('Voorkeuren opslaan') }}</button>
+      {% if style and style.learned_at %}<span style="font-size:12px; color:var(--muted); margin-left:12px;">{% trans date=style.learned_at.strftime('%d-%m-%Y') %}Otto leerde je stijl bij op {{ date }}.{% endtrans %}</span>{% endif %}
+    </form>
+
+    {# ── Schrijfstijl ──────────────────────────────────────────────────────── #}
+    <div class="card" style="padding:22px; margin-bottom:20px;">
+      <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+        <div style="font-size:15px; font-weight:800;">{{ _('Jouw schrijfstijl') }}</div>
+        {% if style and style.learned_at %}
+          <span style="font-size:12px; color:var(--muted);">{% trans date=style.learned_at.strftime('%d-%m-%Y') %}bijgeleerd op {{ date }}{% endtrans %}</span>
+        {% else %}
+          <span style="font-size:12px; color:var(--muted);">{{ _('nog niet geleerd') }}</span>
+        {% endif %}
+      </div>
+      <div style="font-size:12.5px; color:var(--muted); margin:6px 0 14px;">
+        {{ _('Klik op “Opnieuw leren uit mijn verzonden mail” en Otto leest je Verzonden-items en beschrijft hoe je antwoordt. Wat je hier zelf invult, blijft staan — daar komt het leren niet meer aan. Leeg laten geeft een veld terug aan Otto.') }}
+      </div>
+
+      {% if style_description %}
+      <div style="background:var(--bg-subtle, #f6f8fa); border:1px solid var(--border, #e3e6ea); border-radius:10px; padding:12px 14px; margin-bottom:14px;">
+        <div style="font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:4px;">{{ _('Hoe jij antwoordt') }}</div>
+        <div style="font-size:13.5px; color:var(--text, #1f2328); line-height:1.5;">{{ style_description }}</div>
+      </div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('web.save_style_profile') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:180px;">
+            <label class="lbl">{{ _('Begroeting') }}
+              {% if 'greeting' in style_pinned %}<span class="pill" style="font-size:10.5px;">{{ _('door jou ingesteld') }}</span>{% endif %}
+            </label>
+            <input class="input" name="greeting" value="{{ style.greeting if style and style.greeting else '' }}" placeholder="{{ _('Hallo') }}">
+          </div>
+          <div style="flex:1; min-width:180px;">
+            <label class="lbl">{{ _('Afsluiting') }}
+              {% if 'signoff' in style_pinned %}<span class="pill" style="font-size:10.5px;">{{ _('door jou ingesteld') }}</span>{% endif %}
+            </label>
+            <input class="input" name="signoff" value="{{ style.signoff if style and style.signoff else '' }}" placeholder="{{ _('Groeten') }}">
+          </div>
+        </div>
+
+        <label class="lbl" style="margin-top:12px;">{{ _('Voorbeeldzinnen') }}
+          <span style="color:var(--muted); font-weight:400;">· {{ _('één per regel, max. 5 — Otto schrijft in deze toon') }}</span>
+          {% if 'examples' in style_pinned %}<span class="pill" style="font-size:10.5px;">{{ _('door jou ingesteld') }}</span>{% endif %}
+        </label>
+        <textarea class="textarea" name="examples" rows="5"
+                  placeholder="{{ _('Otto vult dit zelf aan zodra je een paar antwoorden hebt verstuurd.') }}">{{ style_examples|join('\n') }}</textarea>
+
+        <button type="submit" class="btn btn-primary" style="height:40px; margin-top:14px;">{{ _('Schrijfstijl opslaan') }}</button>
+      </form>
+
+      <form method="post" action="{{ url_for('web.relearn_style') }}" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-ghost" style="height:40px; margin-top:14px;">{{ _('Opnieuw leren uit mijn verzonden mail') }}</button>
+      </form>
+    </div>
+
+    {# ── Synchronisatie ────────────────────────────────────────────────────── #}
+    <div class="card" style="padding:22px; margin-bottom:20px;">
+      <div style="font-size:15px; font-weight:800; margin-bottom:4px;">{{ _('Synchronisatie') }}</div>
+      <div style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">
+        {{ _('Otto haalt automatisch nieuwe e-mails op en zet er concepten bij klaar — ook als de app dicht is. Kies hoe vaak dat gebeurt.') }}
+      </div>
+
+      <form method="post" action="{{ url_for('web.save_sync_prefs') }}" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div>
+          <div class="label">{{ _('Hoe vaak ophalen') }}</div>
+          <select name="sync_interval" class="input" style="width:auto; min-width:200px; height:40px;">
+            {% for opt in sync_options %}
+              <option value="{{ opt.seconds }}" {{ 'selected' if opt.seconds == sync_interval }}>{{ opt.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="height:40px;">{{ _('Opslaan') }}</button>
+        <button type="button" class="btn btn-secondary" style="height:40px;" data-action="sync-now">{{ _('Nu synchroniseren') }}</button>
+        <button type="button" class="btn btn-secondary" style="height:40px;" data-action="recategorize-all">{{ _('Opnieuw categoriseren') }}</button>
+      </form>
+      <div style="font-size:12px; color:var(--muted); margin-top:8px;">
+        {{ _('"Opnieuw categoriseren" herstelt eerst mails die zonder afzender of inhoud binnenkwamen en laat de AI je inbox daarna opnieuw indelen. Wat je zelf hebt ingedeeld, blijft staan.') }}
+      </div>
+
+      <div style="font-size:12px; color:var(--muted); margin-top:12px;">
+        {% if sync_accounts %}
+          {% if sync_last %}{% trans last=sync_last %}Laatst opgehaald: {{ last }}.{% endtrans %}{% else %}{{ _('Nog niet gesynchroniseerd.') }}{% endif %}
+        {% else %}
+          {{ _('Nog geen postvak gekoppeld — koppel er een via') }} <a href="{{ url_for('web.integrations') }}" style="color:var(--accent); font-weight:700;">{{ _('Integraties') }}</a> {{ _('zodat Otto kan beginnen met ophalen.') }}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="settings-list">
+      {% for s in settings %}
+        <div class="set-row">
+          <div style="flex:1;">
+            <div class="lbl">{{ s.label }}</div>
+            <div class="desc">{{ s.description }}</div>
+          </div>
+          <div class="toggle {{ 'on' if s.on }}" data-action="toggle-setting" data-key="{{ s.key }}"><div class="knob"></div></div>
+        </div>
+      {% endfor %}
+      <div class="set-row">
+        <div style="flex:1;">
+          <div class="lbl">{{ _('Dagelijkse takenmail') }}</div>
+          <div class="desc">{{ _('Elke ochtend een overzicht van je taken voor vandaag (te laat, vandaag, herinneringen) in je mailbox.') }}</div>
+        </div>
+        <div class="toggle {{ 'on' if current_user.daily_email_enabled }}" data-action="toggle-daily-email"><div class="knob"></div></div>
+      </div>
+      <div class="set-row">
+        <div style="flex:1;">
+          <div class="lbl">{{ _('Werkuren') }}</div>
+          <div class="desc">{{ _('Buiten deze uren werkt Otto stil door, zonder meldingen.') }}</div>
+        </div>
+        <div style="font-size:13.5px; font-weight:700; color:var(--accent-soft-text); background:var(--purple-100); padding:8px 13px; border-radius:9px;">09:00 – 18:00</div>
+      </div>
+    </div>
+
+    <div class="locked-note">
+      <div style="width:24px; height:24px; border-radius:7px; background:var(--accent); display:flex; align-items:center; justify-content:center; flex:none; color:#fff; font-size:13px; font-weight:800;">✓</div>
+      <div>
+        <div style="font-size:14px; font-weight:800; color:var(--heading-dark);">{{ _('Otto verzendt nooit automatisch') }}</div>
+        <div style="font-size:12.5px; color:var(--text-2); line-height:1.5; margin-top:2px;">{{ _('Dit principe staat vast en kan niet worden uitgeschakeld. Elk antwoord wordt enkel als concept klaargezet — verzenden vereist altijd jouw expliciete actie.') }}</div>
+      </div>
+    </div>
+
+    <div class="locked-note">
+      <div style="width:24px; height:24px; border-radius:7px; background:var(--accent); display:flex; align-items:center; justify-content:center; flex:none; color:#fff; font-size:13px; font-weight:800;">✓</div>
+      <div>
+        <div style="font-size:14px; font-weight:800; color:var(--heading-dark);">{{ _('Jouw data traint nooit een model') }}</div>
+        <div style="font-size:12.5px; color:var(--text-2); line-height:1.5; margin-top:2px;">{{ _('Ook dit staat vast: jouw mailinhoud wordt nooit gebruikt om AI-modellen te trainen. Daarom is er geen schakelaar voor — er valt niets aan te zetten.') }}</div>
+      </div>
+    </div>
+    </div>{# /settings-cols #}
+  </div>
+</div>
+{% endblock %}

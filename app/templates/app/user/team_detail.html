@@ -1,0 +1,381 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ settings.name }} — {{ _('Teams') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="team-detail-wrap">
+    <a href="{{ url_for('web.teams') }}" style="font-size:12.5px; color:var(--muted); text-decoration:none;">{{ _('← Terug naar Teams') }}</a>
+
+    <div class="team-hero">
+      <div class="th-avatar" style="background:{{ settings.color or '#5B5FC7' }};">{{ settings.name[:1]|upper }}</div>
+      <div style="flex:1; min-width:0;">
+        <div class="th-name">{{ settings.name }}</div>
+        <div class="th-addr">{{ account.target_address or account.email }}</div>
+      </div>
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('web.team_inbox', account_id=account.id) }}">{{ _('Open inbox') }}</a>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('web.team_analytics', account_id=account.id) }}">{{ _('Analyse') }}</a>
+    </div>
+
+    {% if not can_manage %}
+      <div class="alert alert-info" style="margin-top:12px;">{{ _('Je werkt mee aan dit postvak. Instellingen worden beheerd door een postvak-beheerder.') }}</div>
+    {% endif %}
+
+    {# ── Tabs ── #}
+    <div class="team-tabs" role="tablist">
+      <button class="team-tab active" data-team-tab="algemeen">{{ _('Algemeen') }}</button>
+      {% if can_manage %}<button class="team-tab" data-team-tab="automatisering">{{ _('Automatisering') }}</button>{% endif %}
+      <button class="team-tab" data-team-tab="leden">{% trans count=members|length %}Leden ({{ count }}){% endtrans %}</button>
+      <button class="team-tab" data-team-tab="categorieen">{{ _('Categorieën') }}</button>
+      {% if can_manage %}<button class="team-tab" data-team-tab="meldingen">{{ _('Meldingen') }}</button>{% endif %}
+    </div>
+
+    {% if can_manage %}
+    <form method="post" action="{{ url_for('web.team_settings', account_id=account.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      {# ── Tab: Algemeen ── #}
+      <div class="team-panel active" data-team-panel="algemeen">
+        <div class="card" style="padding:22px;">
+          <div class="team-section-h">{{ _('Algemeen') }}</div>
+
+          <div class="label">{{ _('Naam') }}</div>
+          <input name="display_name" class="input" value="{{ settings.display_name or '' }}" placeholder="{{ account.target_address }}">
+
+          <div class="label" style="margin-top:14px;">{{ _('Omschrijving') }} <span style="font-weight:500; color:var(--muted);">{{ _('— waar dit postvak voor dient (optioneel)') }}</span></div>
+          <textarea name="description" class="input" rows="2" style="resize:vertical;" placeholder="{{ _('Bijv. Klantvragen over facturatie en abonnementen.') }}">{{ settings.description or '' }}</textarea>
+
+          <div class="label" style="margin-top:14px;">{{ _('Kleur') }}</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+            {% for c in color_choices %}
+              <label style="cursor:pointer;">
+                <input type="radio" name="color" value="{{ c }}" style="display:none;" {{ 'checked' if settings.color == c }}>
+                <span style="display:block; width:26px; height:26px; border-radius:50%; background:{{ c }}; border:3px solid {{ 'var(--text)' if settings.color == c else 'transparent' }};"></span>
+              </label>
+            {% endfor %}
+          </div>
+
+          <div class="label" style="margin-top:16px;">{{ _('Toon') }}</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin:6px 0;">
+            {% for t in tones %}
+              <label style="cursor:pointer;">
+                <input type="radio" name="tone" value="{{ t.key }}" style="display:none;" {{ 'checked' if settings.tone == t.key }}>
+                <span class="pill" style="padding:8px 14px; font-weight:700; border:1px solid var(--border); {{ 'background:var(--accent); color:#fff; border-color:var(--accent);' if settings.tone == t.key }}">{{ t.label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+
+          <div class="label" style="margin-top:8px;">{{ _('Taal') }}</div>
+          <input name="language" class="input" value="{{ settings.language or '' }}" placeholder="{{ _('antwoord in Nederlands') }}">
+
+          <div class="label" style="margin-top:14px;">{{ _('Team-handtekening') }} <span style="font-weight:500; color:var(--muted);">{{ _('— onderaan elk concept van dit postvak') }}</span></div>
+          <textarea name="signature" class="input" rows="3" style="resize:vertical;" placeholder="{{ _('Met vriendelijke groet,') }}&#10;{{ _('Team Support') }}">{{ settings.signature or '' }}</textarea>
+
+          <div class="label" style="margin-top:14px;">{{ _('Standaard antwoord') }} <span style="font-weight:500; color:var(--muted);">{{ _('— optioneel') }}</span></div>
+          <textarea name="default_reply" class="input" rows="3" style="resize:vertical;" placeholder="{{ _('Bijv. antwoord empathisch en bied altijd een concrete volgende stap.') }}">{{ settings.default_reply or '' }}</textarea>
+
+          <div class="label" style="margin-top:14px;">{{ _('Reactietijd (SLA) in minuten') }} <span style="font-weight:500; color:var(--muted);">{{ _('— optioneel') }}</span></div>
+          <input name="sla_minutes" type="number" min="0" class="input" value="{{ settings.sla_minutes or '' }}" style="max-width:160px;">
+
+          <label class="set-inline" style="margin-top:18px;">
+            <input type="checkbox" name="auto_draft" {{ 'checked' if settings.auto_draft }}>
+            <span><span class="set-inline-lbl">{{ _('Automatisch concepten maken voor dit postvak') }}</span></span>
+          </label>
+          <label class="set-inline" style="margin-top:12px;">
+            <input type="checkbox" name="approval_required" {{ 'checked' if settings.approval_required }}>
+            <span>
+              <span class="set-inline-lbl">{{ _('Concept moet worden goedgekeurd voor verzenden') }}</span>
+              <span class="set-inline-desc">{{ _('Alleen leden met verzendrecht kunnen dan een concept versturen.') }}</span>
+            </span>
+          </label>
+
+          <label class="set-inline" style="margin-top:18px;">
+            <input type="checkbox" name="noise_filter_enabled" {{ 'checked' if settings.noise_filter_enabled }}>
+            <span>
+              <span class="set-inline-lbl">{{ _('Ruis meteen wegzetten') }}</span>
+              <span class="set-inline-desc">{{ _('Nieuwsbrieven en meldingen gaan meteen naar de ruiscategorie — zonder AI, zonder concept, en zonder melding in het Teams-kanaal.') }}</span>
+            </span>
+          </label>
+
+          <label class="set-inline" style="margin-top:18px;">
+            <input type="checkbox" name="propose_slots_enabled" {{ 'checked' if settings.propose_slots_enabled }}>
+            <span>
+              <span class="set-inline-lbl">{{ _('Vrije momenten voorstellen') }}</span>
+              <span class="set-inline-desc">{{ _('Otto zet echte vrije momenten uit de agenda van dit postvak in een concept dat om een afspraak vraagt. Alleen vrij/bezet, nooit de inhoud van een afspraak.') }}</span>
+            </span>
+          </label>
+
+          <label class="set-inline" style="margin-top:18px;">
+            <input type="checkbox" name="commitments_enabled" {{ 'checked' if settings.commitments_enabled }}>
+            <span>
+              <span class="set-inline-lbl">{{ _('Toezeggingen omzetten in taken') }}</span>
+              <span class="set-inline-desc">{{ _('Een belofte met een termijn in verzonden mail wordt een taak met deadline.') }}</span>
+            </span>
+          </label>
+
+          <button type="submit" class="btn btn-primary" style="height:40px; margin-top:20px;">{{ _('Instellingen opslaan') }}</button>
+        </div>
+      </div>
+
+      {# ── Tab: Automatisering ── #}
+      <div class="team-panel" data-team-panel="automatisering">
+        <div class="card" style="padding:22px;">
+          <div class="team-section-h">{{ _('Automatisering') }}</div>
+          <div class="team-section-sub">{{ _('Opvolgingen, opruimen van concepten en automatisch opbergen — per postvak instelbaar.') }}</div>
+
+          <label class="set-inline">
+            <input type="checkbox" name="follow_up_enabled" {{ 'checked' if settings.follow_up_enabled }}>
+            <span>
+              <span class="set-inline-lbl">{{ _('Automatische opvolging') }}</span>
+              <span class="set-inline-desc">{{ _('Geen antwoord op een verzonden mail? Otto zet een beleefd opvolg-concept klaar.') }}</span>
+            </span>
+          </label>
+          <div class="label" style="margin-top:12px;">{{ _('Na hoeveel dagen zonder antwoord') }}</div>
+          <input type="number" name="follow_up_days" min="1" max="60" class="input" style="width:120px; height:38px;"
+                 value="{{ settings.follow_up_days if settings.follow_up_days else 3 }}">
+
+          <div class="label" style="margin-top:18px;">{{ _('Onverstuurde concepten verwijderen na') }} <span style="font-weight:500; color:var(--muted);">{{ _('— dagen (leeg = nooit)') }}</span></div>
+          <input type="number" name="draft_ttl_days" min="1" max="365" class="input" style="width:120px; height:38px;"
+                 value="{{ settings.draft_ttl_days or '' }}" placeholder="{{ _('nooit') }}">
+
+          <label class="set-inline" style="margin-top:18px;">
+            <input type="checkbox" name="auto_folder_enabled" {{ 'checked' if settings.auto_folder_enabled }}>
+            <span>
+              <span class="set-inline-lbl">{{ _('Mail automatisch opbergen in mappen') }}</span>
+              <span class="set-inline-desc">{{ _('Categorieën die niet in de inbox blijven, verplaatst Otto naar hun gekozen map.') }}</span>
+            </span>
+          </label>
+
+          <button type="submit" class="btn btn-primary" style="height:40px; margin-top:20px;">{{ _('Instellingen opslaan') }}</button>
+        </div>
+      </div>
+
+      {# ── Tab: Meldingen ── #}
+      <div class="team-panel" data-team-panel="meldingen">
+        <div class="card" style="padding:22px;">
+          <div class="team-section-h" style="display:flex; align-items:center; gap:8px;">
+            <span style="width:18px; height:18px; border-radius:5px; background:#5B5FC7; color:#fff; font-size:10px; font-weight:800; display:inline-flex; align-items:center; justify-content:center;">T</span>
+            Microsoft Teams
+          </div>
+          <div class="team-section-sub">{{ _('Post nieuwe te-beantwoorden mail + toewijzingen naar een Teams-kanaal.') }}</div>
+          <div class="label">{{ _('Inkomende webhook-URL') }} <span style="font-weight:500; color:var(--muted);">{{ _('— uit je Teams-kanaal: ⋯ → Connectoren → Incoming Webhook') }}</span></div>
+          <input name="teams_webhook_url" class="input" value="{{ settings.teams_webhook_url or '' }}" placeholder="https://outlook.office.com/webhook/…">
+          <label class="set-inline" style="margin-top:12px;">
+            <input type="checkbox" name="teams_notify" {{ 'checked' if settings.teams_notify }}>
+            <span><span class="set-inline-lbl">{{ _('Meldingen naar dit kanaal sturen') }}</span></span>
+          </label>
+          <label class="set-inline" style="margin-top:12px;">
+            <input type="checkbox" name="teams_bundle" {{ 'checked' if settings.teams_bundle }}>
+            <span>
+              <span class="set-inline-lbl">{{ _('Bundelen op vaste momenten') }}</span>
+              <span class="set-inline-desc">{{ _('In plaats van één kaart per mail verzamelt Otto de meldingen en post ze als één overzicht. Toewijzingen blijven wél meteen komen.') }}</span>
+            </span>
+          </label>
+          <div class="label" style="margin-top:12px;">{{ _('Momenten') }} <span style="font-weight:500; color:var(--muted);">{{ _('— uren, bv. 9,13,17') }}</span></div>
+          <input name="teams_bundle_hours" class="input" style="width:180px; height:38px;"
+                 value="{{ settings.teams_bundle_hours or '' }}" placeholder="9,13,17">
+          <button type="submit" class="btn btn-primary" style="height:40px; margin-top:20px;">{{ _('Instellingen opslaan') }}</button>
+        </div>
+      </div>
+    </form>
+    {% else %}
+      {# Read-only Algemeen for non-managers #}
+      <div class="team-panel active" data-team-panel="algemeen">
+        <div class="card" style="padding:22px;">
+          <div class="team-section-h">{{ _('Algemeen') }}</div>
+          {% set rows = [
+            (_('Omschrijving'), settings.description or '—'),
+            (_('Automatisch concepten'), _('Aan') if settings.auto_draft else _('Uit')),
+            (_('Toon'), settings.tone|capitalize),
+            (_('Taal'), settings.language),
+            (_('Handtekening'), settings.signature or '—'),
+            (_('Standaard antwoord'), settings.default_reply or '—'),
+            (_('Reactietijd (SLA)'), (settings.sla_minutes ~ ' min') if settings.sla_minutes else '—'),
+          ] %}
+          {% for k, v in rows %}
+            <div class="kv-row" style="padding:9px 0; border-bottom:1px solid var(--border);">
+              <div class="kv-k">{{ k }}</div>
+              <div class="kv-v">{{ v }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {# ── Tab: Leden ── #}
+    <div class="team-panel" data-team-panel="leden">
+      <div class="card" style="padding:22px;">
+        <div style="display:flex; align-items:center; margin-bottom:14px;">
+          <div class="team-section-h" style="flex:1; margin:0;">{% trans count=members|length %}Leden ({{ count }}){% endtrans %}</div>
+          {% if can_manage %}<button class="btn btn-secondary btn-sm" data-action="team-add-member">{{ _('+ Lid toevoegen') }}</button>{% endif %}
+        </div>
+        <div style="display:flex; flex-direction:column; gap:13px;">
+          {% for m in members %}
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 11px;">
+              <div style="width:30px; height:30px; border-radius:50%; background:{{ m.avatar_color }}; color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:none;">{{ m.initials or (m.name[:1]|upper) }}</div>
+              <div style="flex:1 1 150px; min-width:150px;">
+                <div style="font-size:13.5px; font-weight:600;">{{ m.name }}{% if m.is_me %} <span style="color:var(--muted-3); font-weight:500;">{{ _('(jij)') }}</span>{% endif %}</div>
+                <div style="font-size:12px; color:var(--muted);">{{ m.email }}</div>
+              </div>
+              {% if can_manage %}
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-left:auto;">
+                  <select class="role-select" data-team-role data-acct="{{ account.id }}" data-uid="{{ m.user_id }}">
+                    {% for r in member_roles %}<option value="{{ r.key }}" {{ 'selected' if m.role == r.key }}>{{ r.label }}</option>{% endfor %}
+                  </select>
+                  <label style="display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-2); cursor:pointer;">
+                    <input type="checkbox" data-team-perm="can_draft" data-acct="{{ account.id }}" data-uid="{{ m.user_id }}" {{ 'checked' if m.can_draft }}> {{ _('Concept') }}
+                  </label>
+                  <label style="display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-2); cursor:pointer;">
+                    <input type="checkbox" data-team-perm="can_send" data-acct="{{ account.id }}" data-uid="{{ m.user_id }}" {{ 'checked' if m.can_send }}> {{ _('Verzenden') }}
+                  </label>
+                  {% if not m.is_me %}<button class="btn-discard" style="height:30px;" data-team-remove data-acct="{{ account.id }}" data-uid="{{ m.user_id }}">{{ _('Verwijderen') }}</button>{% endif %}
+                </div>
+              {% else %}
+                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-left:auto;">
+                  {% if m.can_draft %}<span class="pill" style="font-size:10.5px;">{{ _('Concept') }}</span>{% endif %}
+                  {% if m.can_send %}<span class="pill" style="font-size:10.5px;">{{ _('Verzenden') }}</span>{% endif %}
+                  <span class="pill" style="font-size:10.5px; color:var(--accent); background:var(--purple-150);">{{ m.role_label }}</span>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# ── Tab: Categorieën ── #}
+    <div class="team-panel" data-team-panel="categorieen">
+      {% if can_manage %}
+      <div class="card" style="padding:22px;">
+        <div class="team-section-h">{{ _('Categorieën') }}</div>
+        <div class="team-section-sub">{{ _('Kies welke categorieën dit postvak gebruikt en of Otto er concepten voor maakt. Een eigen AI-instructie verfijnt de sortering voor dit postvak.') }}</div>
+        <div id="mbcat-list" data-acct="{{ account.id }}" style="display:flex; flex-direction:column;">
+          {% for c in mailbox_categories %}
+            <div class="mbcat-row" data-cid="{{ c.id }}" style="padding:12px 0; border-top:1px solid var(--border);">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <span style="width:9px; height:9px; border-radius:50%; background:{{ c.color }}; flex:none;"></span>
+                <div style="flex:1 1 140px; font-size:13.5px; font-weight:600;">{{ c.name }}</div>
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-2); cursor:pointer;">
+                  <input type="checkbox" class="mbcat-enabled" {{ 'checked' if c.enabled }}> {{ _('Actief') }}
+                </label>
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-2); cursor:pointer;">
+                  <input type="checkbox" class="mbcat-draft" {{ 'checked' if c.draft_enabled }}> {{ _('Concept') }}
+                </label>
+              </div>
+              <input class="input mbcat-ai" placeholder="{{ _('Eigen AI-instructie voor dit postvak (optioneel)') }}" value="{{ c.ai_override }}" style="margin-top:8px; font-size:12.5px;">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:8px;">
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-2); cursor:pointer;">
+                  <input type="checkbox" class="mbcat-keep" {{ 'checked' if c.keep_in_inbox }}> {{ _('Blijft in inbox') }}
+                </label>
+                <input class="input mbcat-folder" placeholder="{{ _('Anders verplaatsen naar map…') }}" value="{{ c.target_folder }}"
+                       style="flex:1; min-width:160px; font-size:12.5px; {{ 'display:none;' if c.keep_in_inbox }}">
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <button class="btn btn-primary" data-action="save-mbcats" data-acct="{{ account.id }}" style="height:40px; margin-top:16px;">{{ _('Categorie-instellingen opslaan') }}</button>
+      </div>
+      {% else %}
+      <div class="card" style="padding:22px;">
+        <div class="team-section-h">{{ _('Categorieën') }}</div>
+        <div class="team-section-sub">{{ _('De categorieën die Otto in dit postvak gebruikt.') }}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          {% for c in mailbox_categories if c.enabled %}
+            <span class="pill" style="border:1px solid var(--border); font-size:11.5px;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:{{ c.color }}; margin-right:6px; vertical-align:middle;"></span>{{ c.name }}{% if c.draft_enabled %} · {{ _('concept') }}{% endif %}</span>
+          {% else %}
+            <span style="font-size:12.5px; color:var(--muted-3);">{{ _('Nog geen categorieën ingesteld.') }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {# ── Snippets: vaste tekstblokken voor dit team ───────────────────── #}
+      <div class="card" style="padding:22px;">
+        <div class="team-section-h">{{ _('Snippets') }}</div>
+        <div class="team-section-sub">
+          {{ _('Vaste tekstblokken die het team in een concept kan invoegen — zo antwoordt iedereen hetzelfde op terugkerende vragen.') }}
+        </div>
+
+        {% for s in snippets %}
+          <div style="border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:9px;">
+            <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap;">
+              <strong style="font-size:13.5px;">{{ s.title }}</strong>
+              {% if s.is_org_wide %}<span class="pill" style="font-size:10.5px;">{{ _('hele organisatie') }}</span>{% endif %}
+              {% if s.used_count %}<span style="font-size:11.5px; color:var(--muted);">{% trans n=s.used_count %}{{ n }}× gebruikt{% endtrans %}</span>{% endif %}
+              <span style="flex:1;"></span>
+              {% if can_manage and not s.is_org_wide %}
+                <button class="btn-discard" style="height:28px;" data-snippet-delete data-id="{{ s.id }}">{{ _('Verwijderen') }}</button>
+              {% endif %}
+            </div>
+            <div style="font-size:12.5px; color:var(--muted); margin-top:6px; white-space:pre-wrap;">{{ s.body }}</div>
+          </div>
+        {% else %}
+          <div style="font-size:12.5px; color:var(--muted-3); margin-bottom:12px;">{{ _('Nog geen blokken.') }}</div>
+        {% endfor %}
+
+        {% if can_manage %}
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+            <input class="input" id="snippet-title" placeholder="{{ _('Titel, bv. ‘Openingsuren’') }}">
+            <textarea class="textarea" id="snippet-body" rows="3" placeholder="{{ _('De tekst die ingevoegd wordt…') }}"></textarea>
+            <div>
+              <button class="btn btn-primary" style="height:38px;" data-snippet-add data-acct="{{ account.id }}">{{ _('Blok toevoegen') }}</button>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if can_manage %}
+{# Add-member modal — opened by "+ Lid toevoegen" (modals.js) #}
+<div id="member-modal" class="modal-overlay" style="display:none;">
+  <div class="modal pop" data-stop-propagation>
+    <div style="font-size:19px; font-weight:800; letter-spacing:-.01em; margin-bottom:18px;">{{ _('Lid toevoegen') }}</div>
+    {% if addable_users %}
+      <div class="label">{{ _('Gebruiker') }}</div>
+      <select id="member-user" class="input" style="margin-bottom:16px;">
+        {% for u in addable_users %}<option value="{{ u.id }}">{{ u.name }} — {{ u.email }}</option>{% endfor %}
+      </select>
+
+      <div class="label">{{ _('Rol in dit postvak') }}</div>
+      <select id="member-role" class="input" style="margin-bottom:16px;">
+        {% for r in member_roles %}<option value="{{ r.key }}" {{ 'selected' if r.key == 'agent' }}>{{ r.label }}</option>{% endfor %}
+      </select>
+
+      <label style="display:flex; align-items:center; gap:9px; margin-bottom:8px; cursor:pointer;">
+        <input type="checkbox" id="member-can-draft" checked> <span style="font-size:13.5px;">{{ _('Mag concepten maken') }}</span>
+      </label>
+      <label style="display:flex; align-items:center; gap:9px; margin-bottom:22px; cursor:pointer;">
+        <input type="checkbox" id="member-can-send" checked> <span style="font-size:13.5px;">{{ _('Mag verzenden') }}</span>
+      </label>
+
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="spacer"></span>
+        <button id="member-cancel" class="btn btn-ghost">{{ _('Annuleren') }}</button>
+        <button id="member-save" class="btn btn-primary" data-acct="{{ account.id }}">{{ _('Toevoegen') }}</button>
+      </div>
+    {% else %}
+      <div style="font-size:13px; color:var(--muted); line-height:1.5;">{{ _('Iedereen in je organisatie is al lid van dit postvak. Nodig eerst nieuwe gebruikers uit via Beheer → Gebruikers.') }}</div>
+      <div style="display:flex; align-items:center; gap:10px; margin-top:20px;">
+        <span class="spacer"></span>
+        <button id="member-cancel" class="btn btn-ghost">{{ _('Sluiten') }}</button>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<script nonce="{{ csp_nonce }}">
+  // Lightweight tab switcher for the Teams settings page.
+  (function () {
+    var tabs = document.querySelectorAll(".team-tab");
+    var panels = document.querySelectorAll(".team-panel");
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        var key = tab.getAttribute("data-team-tab");
+        tabs.forEach(function (t) { t.classList.toggle("active", t === tab); });
+        panels.forEach(function (p) { p.classList.toggle("active", p.getAttribute("data-team-panel") === key); });
+      });
+    });
+  })();
+</script>
+{% endblock %}

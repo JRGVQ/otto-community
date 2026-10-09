@@ -1,0 +1,92 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('E-mailkoppeling') }} — {{ _('Beheer') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:820px;">
+    <div class="page-h">{{ _('E-mailkoppeling') }}</div>
+    <div class="page-sub">{{ _('Koppel je organisatie op providerniveau. Eén app-registratie bedient alle postvakken.') }}</div>
+
+    <div class="card card-18" style="padding:22px; margin-bottom:16px;">
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px;">
+        <div style="width:42px; height:42px; border-radius:11px; background:var(--outlook); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800;">MS</div>
+        <div style="flex:1;"><div style="font-size:15px; font-weight:800;">Microsoft Graph API</div><div style="font-size:12.5px; color:var(--muted);">{{ _('Microsoft 365 / Outlook · app-registratie in Entra ID') }}</div></div>
+        {% if mailbox_connected and mailbox_status != 'error' %}
+          <span class="tag" style="font-size:11.5px; padding:4px 11px; color:#1F8A5B; background:#EAF7F0;">● {{ _('Verbonden') }}</span>
+        {% elif mailbox_status == 'error' %}
+          <span class="tag" style="font-size:11.5px; padding:4px 11px; color:#C0392B; background:#FDECEC;">● {{ _('Fout — opnieuw koppelen') }}</span>
+        {% else %}
+          <span class="tag" style="font-size:11.5px; padding:4px 11px; color:var(--muted); background:var(--surface-2);">○ {{ _('Niet verbonden') }}</span>
+        {% endif %}
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
+        <div><div class="label" style="font-size:12px; margin-bottom:5px;">Application (client) ID</div><input class="input" style="height:36px; font-size:12px; color:var(--text-2);" value="{{ org.graph_app_id }}" /></div>
+        <div><div class="label" style="font-size:12px; margin-bottom:5px;">Directory (tenant) ID</div><input class="input" style="height:36px; font-size:12px; color:var(--text-2);" value="{{ org.graph_tenant_id }}" /></div>
+      </div>
+      {# Real organisation-wide consent state + the one-click setup button. #}
+      {% if graph_admin_consented_at %}
+        <div style="display:flex; align-items:center; gap:9px; padding:11px 14px; background:#EAF7F0; border-radius:10px; margin-bottom:18px;">
+          <span style="color:#27AE60; font-weight:800;">✓</span>
+          <span style="font-size:12.5px; font-weight:700; color:#1F8A5B;">{% trans date=graph_admin_consented_at|fulltime %}Goedgekeurd voor de hele organisatie op {{ date }} — collega's koppelen zonder los toestemmingsscherm.{% endtrans %}</span>
+        </div>
+      {% elif graph_configured %}
+        <div style="display:flex; align-items:flex-start; gap:9px; padding:11px 14px; background:#FEF4E7; border-radius:10px; margin-bottom:14px;">
+          <span style="color:#B7791F; font-weight:800;">!</span>
+          <span style="font-size:12.5px; font-weight:600; color:#8A5A00; line-height:1.45;">{{ _('Nog niet goedgekeurd voor de organisatie. Zolang dat niet gebeurd is, krijgen gebruikers bij het koppelen') }} <strong>{{ _('"Goedkeuring van beheerder vereist"') }}</strong>{{ _('. Klik hieronder om in één keer te koppelen én goed te keuren.') }}</span>
+        </div>
+      {% else %}
+        <div style="display:flex; align-items:flex-start; gap:9px; padding:11px 14px; background:var(--surface-2); border-radius:10px; margin-bottom:14px;">
+          <span style="font-weight:800;">○</span>
+          <span style="font-size:12.5px; color:var(--muted); line-height:1.45;">{{ _('Microsoft 365 is nog niet geconfigureerd voor dit platform. Stel') }} <code>MS_CLIENT_ID</code> / <code>MS_CLIENT_SECRET</code> {{ _('in (of gebruik een eigen app), en redeploy.') }}</span>
+        </div>
+      {% endif %}
+
+      {% if graph_configured and can_manage_providers %}
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
+          <a class="btn btn-primary" href="{{ url_for('auth.oauth_microsoft_admin_consent') }}">
+            {{ _('Opnieuw koppelen & goedkeuren') if graph_admin_consented_at else _('Koppelen & goedkeuren voor organisatie') }}
+          </a>
+          <a class="btn btn-secondary" href="{{ url_for('auth.oauth_microsoft_admin_consent', koppel=0) }}">
+            {{ _('Alleen goedkeuren (zonder postvak)') }}
+          </a>
+        </div>
+        <div style="font-size:11.5px; color:var(--muted); margin:0 0 18px; line-height:1.45;">
+          {{ _('Je wordt als beheerder naar Microsoft gestuurd. Vink daar') }} <strong>"Consent on behalf of your organization"</strong>
+          {{ _('(Namens organisatie) aan om in één keer voor je hele organisatie goed te keuren. De verbinding wordt daarna automatisch opgeslagen — geen app-registratie of invullen nodig.') }}
+          {{ _('Kies "Alleen goedkeuren" als de goedkeurende beheerder (bv. de IT-admin) zelf geen postvak in Otto wil — elke gebruiker koppelt daarna zijn eigen postvak.') }}
+        </div>
+      {% endif %}
+      <div class="label" style="font-size:12.5px; margin-bottom:10px;">{{ _('API-machtigingen (scopes)') }}</div>
+      <div style="display:flex; flex-direction:column; gap:1px;">
+        {% for sc in graph_scopes %}
+          <div class="scope-row">
+            <div class="check {{ 'on' if sc.on }} {{ 'locked' if sc.locked }}"
+                 {% if not sc.locked %}data-action="toggle-scope" data-name="{{ sc.name }}"{% endif %}>{{ '✓' if sc.on }}</div>
+            <div style="flex:1;"><div style="font-size:13px; font-weight:700; font-family:ui-monospace, monospace;">{{ sc.name }}</div><div style="font-size:12px; color:var(--muted);">{{ sc.description }}</div></div>
+          </div>
+        {% endfor %}
+      </div>
+      <button class="btn btn-secondary" style="margin-top:16px;" data-action="test" data-label="Microsoft Graph">{{ _('Graph-verbinding testen') }}</button>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div class="card card-18" style="padding:20px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <div style="width:38px; height:38px; border-radius:10px; background:#EA4335; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800;">G</div>
+          <div style="flex:1;"><div style="font-size:14px; font-weight:800;">Gmail API</div><div style="font-size:12px; color:var(--muted);">Google Workspace</div></div>
+          <span class="tag" style="color:#1F8A5B; background:#EAF7F0; padding:3px 9px;">{{ _('Verbonden') }}</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-2); line-height:1.5;">{{ _('Watch via Pub/Sub:') }} <span style="font-family:ui-monospace, monospace; color:var(--accent-soft-text);">{{ org.gmail_pubsub }}</span></div>
+        <button class="btn btn-secondary btn-sm" style="margin-top:14px; height:36px;" data-action="test" data-label="Gmail API">{{ _('Testen') }}</button>
+      </div>
+      <div class="card card-18" style="padding:20px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <div style="width:38px; height:38px; border-radius:10px; background:var(--accent); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800;">@</div>
+          <div style="flex:1;"><div style="font-size:14px; font-weight:800;">IMAP / SMTP</div><div style="font-size:12px; color:var(--muted);">{{ _('Generieke postvakken') }}</div></div>
+          <span class="tag" style="color:var(--accent-soft-text); background:var(--purple-150); padding:3px 9px;">{{ _('Ingeschakeld') }}</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-2); line-height:1.5;">{{ _('IMAP IDLE met polling-fallback (1–2 min). SMTP enkel als de gebruiker via de app verzendt.') }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

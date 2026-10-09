@@ -1,0 +1,28 @@
+{# Wat het ruisfilter opving: bulkmail zonder concept, zonder aandacht — en met een
+   afmeldheader ook zonder AI-aanroep. #}
+{% if not w.data.has_noise_cat %}
+  <div style="font-size:13px; color:var(--muted);">
+    {{ _('Er is nog geen ruiscategorie. Zet "Dit is ruis" aan op één categorie (bv. Nieuwsbrieven) bij') }}
+    <a href="{{ url_for('web.categories') }}" style="color:var(--accent); font-weight:700;">{{ _('Categorieën') }}</a>
+    {{ _('— dan zie je hier hoeveel bulkmail Otto voor je wegvangt.') }}
+  </div>
+{% elif w.data.count %}
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px;">
+    <div><div style="font-size:24px; font-weight:800;">{{ w.data.count }}</div><div style="font-size:12px; color:var(--muted);">{{ _('mails weggevangen') }}</div></div>
+    <div><div style="font-size:24px; font-weight:800; color:var(--success-text);">{{ w.data.zonder_ai }}</div><div style="font-size:12px; color:var(--muted);">{{ _('AI-aanroepen bespaard') }}</div></div>
+    <div><div style="font-size:24px; font-weight:800;">{{ w.data.pct }}%</div><div style="font-size:12px; color:var(--muted);">{{ _('van je mail in deze periode') }}</div></div>
+  </div>
+  {% if w.data.top %}
+    <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
+      {% for d in w.data.top %}
+        <div style="display:flex; gap:10px; font-size:13px;">
+          <span class="nowrap" style="flex:1; font-weight:600;">{{ d.domain }}</span>
+          <span style="color:var(--muted); flex:none;">{{ d.count }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  <div style="font-size:12px; color:var(--muted-3);">{{ _('Ruis krijgt nooit een concept of melding; bulkmail met een afmeldheader slaat ook de AI-classificatie over — dat scheelt aandacht én AI-kosten.') }}</div>
+{% else %}
+  <div style="font-size:13px; color:var(--muted);">{{ _('Geen ruis in deze periode — een schone inbox, of het filter heeft nog niets te doen gehad.') }}</div>
+{% endif %}

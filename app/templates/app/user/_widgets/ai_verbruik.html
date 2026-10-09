@@ -1,0 +1,25 @@
+{# Org-brede AI-kosten deze kalendermaand — alleen zichtbaar voor wie AI beheert.
+   Bewust los van de periode-selector: het budgetplafond werkt per maand. #}
+{% if w.data.per_model %}
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:12px;">
+    <div style="font-size:28px; font-weight:800;">€{{ '%.2f'|format(w.data.total) }}</div>
+    {% if w.data.cap %}<div style="font-size:12.5px; color:var(--muted);">{% trans cap='%.2f'|format(w.data.cap) %}van €{{ cap }} maandbudget{% endtrans %}</div>{% endif %}
+  </div>
+  {% if w.data.pct is not none %}
+    <div style="height:8px; border-radius:5px; background:var(--surface-2); overflow:hidden; margin-bottom:14px;">
+      <div style="height:100%; width:{{ w.data.pct }}%; background:{{ 'var(--danger)' if w.data.pct >= 90 else 'var(--accent)' }};"></div>
+    </div>
+  {% endif %}
+  <div style="display:flex; flex-direction:column; gap:6px;">
+    {% for m in w.data.per_model %}
+      <div style="display:flex; gap:10px; font-size:13px;">
+        <span class="nowrap" style="flex:1; font-weight:600;">{{ m.model }}</span>
+        <span style="color:var(--muted); flex:none;">{{ m.tokens_display }} {{ _('tokens') }}</span>
+        <span style="flex:none; width:64px; text-align:right; font-weight:700;">€{{ '%.2f'|format(m.cost) }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  <div style="font-size:12px; color:var(--muted-3); margin-top:10px;">{{ _('Boven het budget schakelt Otto automatisch terug naar de gratis modus — de kosten kunnen het plan nooit overstijgen.') }}</div>
+{% else %}
+  <div style="font-size:13px; color:var(--muted);">{{ _('Nog geen AI-verbruik deze maand.') }}</div>
+{% endif %}

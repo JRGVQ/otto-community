@@ -1,0 +1,14 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Taken') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Taken') }}</h1>
+<div class="sub">{{ _('Otto haalt actiepunten uit je mail en bundelt ze in één takenlijst.') }}</div>
+
+<h2>{{ _('Van mail naar taak') }}</h2>
+<p>{{ _('Vraagt een mail om actie, dan kan je er een taak van maken — met titel, context en de gekoppelde mail erbij. Open') }} <strong>{{ _('Taken') }}</strong> {{ _('in de zijbalk voor het volledige overzicht, met vervaldatum en urgentie.') }}</p>
+
+<h2>Microsoft To Do</h2>
+<p>{{ _('Vanuit het leespaneel zet je een mail rechtstreeks als taak in') }} <strong>Microsoft To&nbsp;Do</strong> {{ _('met de knop') }} <em>{{ _('+ Taak in') }} Microsoft To&nbsp;Do</em>.</p>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('analyse') }}">{{ _('Volgende: Analyse') }} →</a></p>
+{% endblock %}

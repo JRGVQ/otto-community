@@ -1,0 +1,32 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}Eigen app koppelen{% endblock %}
+{% block doc %}
+<h1>{{ _('Eigen app koppelen (BYO)') }}</h1>
+<div class="sub">{{ _('Gebruik je eigen Microsoft- of Google-app i.p.v. de gedeelde app, zodat de OAuth-toestemming binnen jouw eigen tenant blijft.') }}</div>
+
+<p>{{ _('Standaard koppelt Otto via de app die de beheerder voor de hele installatie instelde. Elk bedrijf kan in de plaats') }} <strong>{{ _('zijn eigen app') }}</strong> {{ _('gebruiken: je eigen IT registreert de app in jullie tenant, jullie beheerder keurt de rechten goed') }} (<em>admin consent</em>){{ _(', en de OAuth-toestemming blijft volledig binnen jullie eigen Microsoft/Google-omgeving — nooit die van een ander bedrijf. Vul de gegevens in onder') }} <strong>{{ _('Instellingen → Eigen mailbox-app') }}</strong> {{ _('(alleen de Eigenaar ziet dit).') }} {{ _('Secrets worden') }} <strong>{{ _('versleuteld') }}</strong> {{ _('bewaard.') }}</p>
+
+<h2>Microsoft 365 (Entra ID)</h2>
+<ol class="steps-num">
+  <li>{{ _('Ga naar') }} <strong>Microsoft Entra ID → App-registraties → Nieuwe registratie</strong>.</li>
+  <li>Accounttype: <em>Single tenant</em> {{ _('(enkel jullie bedrijf) is het meest afgeschermd. Kies') }} <em>multitenant</em> {{ _('alleen als bewust meerdere tenants dezelfde app gebruiken.') }}</li>
+  <li><strong>Redirect-URI</strong> {{ _('(type Web): plak exact de URI die op de Otto-pagina staat, bv.') }} <code>https://otto.example.com/auth/microsoft/callback</code> {{ _('(let op:') }} <code>https</code>).</li>
+  <li>{{ _('Onder') }} <strong>API-machtigingen → Microsoft Graph → Gedelegeerd</strong> {{ _('voeg je toe:') }} <code>Mail.ReadWrite</code>, <code>Mail.ReadWrite.Shared</code>, <code>MailboxSettings.ReadWrite</code>, <code>Tasks.ReadWrite</code>, <code>User.Read</code>, <code>offline_access</code>. {{ _('Klik daarna') }} <strong>Beheerderstoestemming verlenen</strong> {{ _('— dit is het moment waarop jullie IT de app goedkeurt.') }} {{ _('(Bewust géén') }} <code>Mail.Send</code>{{ _(': Otto verstuurt nooit uit jullie mailbox.)') }}</li>
+  <li>{{ _('Onder') }} <strong>Certificaten &amp; geheimen</strong> {{ _('maak je een clientgeheim en kopieer je de') }} <em>Value</em>.</li>
+  <li>{{ _('Vul in Otto in:') }} <strong>Application (client) ID</strong>, <strong>Directory (tenant) ID</strong> {{ _('en de') }} <strong>client secret</strong>. {{ _('Opslaan.') }}</li>
+</ol>
+<div class="note">{{ _('Daarna gebruikt "Koppel Microsoft 365" automatisch jullie eigen app — de toestemming blijft in jullie tenant, met enkel de rechten die jullie IT heeft goedgekeurd.') }}</div>
+
+<h2>Google Workspace</h2>
+<ol class="steps-num">
+  <li>{{ _('Maak in de Google Cloud Console een') }} <strong>OAuth-client (Web application)</strong>.</li>
+  <li>{{ _('Voeg de') }} <strong>geautoriseerde redirect-URI</strong> {{ _('toe die op de Otto-pagina staat, bv.') }} <code>https://otto.example.com/auth/google/callback</code>.</li>
+  <li>{{ _('Geef de Gmail-scope') }} (<code>gmail.modify</code>) {{ _('en zet de juiste testgebruikers of publiceer de consent screen.') }}</li>
+  <li>{{ _('Vul') }} <strong>Client ID</strong> {{ _('en') }} <strong>Client secret</strong> {{ _('in bij Otto.') }} {{ _('Opslaan.') }}</li>
+</ol>
+
+<h2>{{ _('Terugval') }}</h2>
+<p>{{ _('Laat je de velden leeg, dan gebruikt Otto de gedeelde platform-app. Je kan op elk moment overschakelen naar je eigen app door de gegevens in te vullen.') }}</p>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('sso') }}">{{ _('Volgende: Login-SSO (OIDC) →') }}</a></p>
+{% endblock %}

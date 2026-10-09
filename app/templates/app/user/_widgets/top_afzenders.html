@@ -1,0 +1,16 @@
+{# Domeinen die je het vaakst mailen binnen de periode. #}
+{% if w.data.top_domains %}
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    {% for d in w.data.top_domains %}
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="flex:1; font-size:13px;">{{ d.domain }}</div>
+        <div style="width:55%; height:8px; border-radius:5px; background:var(--surface-2); overflow:hidden;">
+          <div style="height:100%; width:{{ (d.count * 100 / w.data.max)|round }}%; background:var(--accent);"></div>
+        </div>
+        <div style="width:32px; text-align:right; font-size:12.5px; color:var(--muted);">{{ d.count }}</div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div style="font-size:13px; color:var(--muted);">{{ _('Geen afzenders in deze periode.') }}</div>
+{% endif %}

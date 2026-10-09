@@ -1,0 +1,5 @@
+{# Inbox ⇄ Outlook are two views of the same mailbox — switch between them here. #}
+<div class="viewswitch">
+  <a class="{{ 'active' if request.endpoint == 'web.inbox' }}" href="{{ url_for('web.inbox') }}">{{ _('Lijst') }}</a>
+  <a class="{{ 'active' if request.endpoint == 'web.outlook' }}" href="{{ url_for('web.outlook') }}">{{ _('Outlook-stijl') }}</a>
+</div>

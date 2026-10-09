@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Stel Otto in') }} — Otto{% endblock %}
+{% block body %}
+<style>
+  .step-lbl{font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; display:flex; align-items:center; gap:8px;}
+  .step-ok{color:var(--accent);}
+  .setup-note{font-size:12.5px; color:var(--text-2); margin-top:10px;}
+  .setup-note a{color:var(--accent); font-weight:700;}
+  .mini-label{font-size:12px; font-weight:700; color:var(--text-2); margin:10px 0 4px;}
+</style>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="logo-badge"><div class="core"></div></div>
+      <div class="name">Otto</div>
+    </div>
+    <div class="auth-box" style="padding:30px 30px 26px;">
+      <div style="font-size:24px; font-weight:800; letter-spacing:-.02em; margin-bottom:6px;">{{ _('Welkom — stel Otto in') }}</div>
+      <div style="font-size:14px; color:var(--text-2); line-height:1.55; margin-bottom:22px;">{{ _('Je omgeving is leeg en klaar. Koppel je mailbox om te starten — categorieën, instellingen en SSO regel je daarna in de app.') }}</div>
+
+      {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['error','info'] %}
+        <div class="alert alert-{{ cat }}">{{ m }}</div>
+      {% endfor %}
+
+      {# ── Geen AI-model op deze installatie: eerst (optioneel) de eigen AI-sleutel ── #}
+      {% if is_own_key %}
+      <div style="margin-bottom:24px;">
+        <div class="step-lbl">1 · {{ _('Je AI-sleutel') }}{% if not needs_ai_key %} <span class="step-ok">✓</span>{% endif %}</div>
+        {% if needs_ai_key %}
+          <div style="font-size:13px; color:var(--text-2); line-height:1.5; margin-bottom:12px;">
+            {{ _('Deze installatie heeft nog geen AI-model. Kies je provider en model en plak je sleutel — je betaalt je AI-verbruik rechtstreeks bij de provider. Je kan dit ook later doen onder Beheer → AI & model.') }}
+          </div>
+          <form method="post" action="{{ url_for('web.admin_ai_byo') }}" class="card" style="padding:16px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="onboarding">
+            <div class="mini-label">{{ _('Provider (welk AI-bedrijf)') }}</div>
+            <select name="provider" class="input" id="byo-provider">
+              {% for p in byo_providers %}<option value="{{ p.key }}" {{ 'selected' if ai_provider == p.key }}>{{ p.name }}</option>{% endfor %}
+            </select>
+            {% with label_class='mini-label', current_model=ai_model, provider=ai_provider %}
+              {% include "_byo_model_field.html" with context %}
+            {% endwith %}
+            <div class="mini-label">{{ _('API-sleutel') }}{% if byo_has_key %} <span style="color:var(--accent);">· {{ _('al ingesteld, leeg laten om te behouden') }}</span>{% endif %}</div>
+            <input name="api_key" type="password" autocomplete="off" class="input" placeholder="{{ _('plak je provider-API-sleutel') }}">
+            <div class="mini-label" id="byo-baseurl-lbl">{{ _('Endpoint / base-URL') }} <span style="color:var(--muted);">· {{ _('enkel voor Azure of OpenAI-compatibel') }}</span></div>
+            <input name="base_url" class="input" placeholder="{{ _('bv. https://….openai.azure.com of https://openrouter.ai/api/v1') }}" value="{{ ai_base_url or '' }}">
+            {% with provider=ai_provider %}{% include "_byo_key_guide.html" with context %}{% endwith %}
+            <button type="submit" class="btn btn-primary" style="width:100%; height:42px; margin-top:14px;">{{ _('AI-sleutel opslaan') }}</button>
+          </form>
+        {% else %}
+          <div class="card" style="padding:14px 16px; display:flex; align-items:center; gap:10px;">
+            <span style="color:var(--accent); font-weight:800;">✓</span>
+            <div style="flex:1; font-size:13px; color:var(--text-2);">
+              {{ _('AI-sleutel ingesteld') }}{% if ai_provider %} · <strong>{{ ai_provider }}</strong>{% endif %}{% if ai_model %} · {{ ai_model }}{% endif %}
+            </div>
+            <a href="{{ url_for('web.admin_screen', screen='ai') }}" style="font-size:12.5px; color:var(--accent); font-weight:700;">{{ _('Wijzigen') }}</a>
+          </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="step-lbl">{{ 2 if is_own_key else 1 }} · {{ _('Koppel je mailbox') }}</div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for p in providers %}
+        {% set ready = (p.key == 'outlook' and graph_ready) or (p.key == 'gmail' and gmail_ready) %}
+        {# An OAuth tile that isn't configured does NOT connect — it sends you to the
+           own-app screen. Say so on the tile instead of offering "Verbinden" and
+           bouncing: the promise below only holds for the providers that are ready. #}
+        {% set oauth = p.key in ('outlook', 'gmail') %}
+        <form method="post" action="{{ url_for('auth.onboarding_connect') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="provider" value="{{ p.key }}">
+          {# Een klaar-om-te-koppelen OAuth-tegel opent eerst de één-klik-popup
+             (zie _connect_popup.html); de andere tegels gedragen zich als voorheen. #}
+          <button type="submit" class="provider-row" {% if oauth and ready %}data-connect-popup="{{ p.key }}"{% endif %}>
+            <span class="provider-tag" style="background:{{ p.color }};">{{ p.tag }}</span>
+            <span style="flex:1;">
+              <span style="display:block; font-weight:700; font-size:15px;">{{ p.name }}</span>
+              <span style="display:block; font-size:12.5px; color:var(--muted);">
+                {{ p.desc }}
+                {%- if ready %} · <span style="color:var(--accent);">{{ _('klaar om te koppelen') }}</span>
+                {%- elif oauth %} · <span>{{ _('nog niet beschikbaar op deze omgeving') }}</span>{% endif %}
+              </span>
+            </span>
+            <span style="font-size:13px; font-weight:700; color:var(--accent);">
+              {{ _('Eigen app instellen') if (oauth and not ready) else _('Verbinden') }} →
+            </span>
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+
+      {# ── Koppel-toelichting: gedeelde app + toestemming is de hoofdroute ────── #}
+      <div class="setup-note">
+        {# Built from the platform apps that actually exist. Saying "Microsoft/Google"
+           whenever *either* is configured promised one-click setup for a provider that
+           then sent the visitor to an app-registration screen. #}
+        {% set oneclick = [] %}
+        {% if platform_graph %}{% set _x = oneclick.append('Microsoft') %}{% endif %}
+        {% if platform_gmail %}{% set _x = oneclick.append('Google') %}{% endif %}
+        {% if oneclick %}
+          <span style="color:var(--accent); font-weight:700;">🔒 {{ _('Eén klik, geen configuratie.') }}</span>
+          {% trans prov=oneclick|join(' of ') %}Bij Verbinden vraagt {{ prov }} je eenmalig toestemming binnen je eigen tenant — je hoeft zelf niets te registreren of in te stellen.{% endtrans %}
+          {% if oneclick|length == 1 %}
+            <div style="margin-top:8px; font-size:12.5px; color:var(--muted);">
+              {% trans other=('Google' if platform_graph else 'Microsoft') %}{{ other }} is op deze omgeving nog niet beschikbaar. Wil je die nu al koppelen, stel dan hieronder je eigen app in.{% endtrans %}
+            </div>
+          {% endif %}
+          {% if platform_graph and can_admin_consent %}
+            <div style="margin-top:8px; font-size:12.5px;">
+              {{ _('Vraagt Microsoft om goedkeuring van een beheerder?') }}
+              <a href="{{ url_for('auth.oauth_microsoft_admin_consent') }}" style="color:var(--accent); font-weight:700;">{{ _('Keur Otto eenmalig goed voor je hele organisatie') }} →</a>
+            </div>
+          {% endif %}
+        {% elif uses_own_ms or uses_own_google %}
+          <span style="color:var(--accent); font-weight:700;">✓ {{ _('Eigen mailbox-app actief.') }}</span>
+          {{ _('Klik hierboven op Verbinden om te koppelen.') }}
+        {% else %}
+          {{ _('De beheerder van deze installatie heeft de Microsoft/Google-koppeling nog niet ingesteld (zie INSTALL.md). Tot dan kun je je eigen app gebruiken.') }}
+        {% endif %}
+      </div>
+
+      {# ── Geavanceerd: eigen tenant-app (secundaire optie) ───────────────────── #}
+      <details style="margin-top:8px;">
+        <summary style="cursor:pointer; font-size:12.5px; color:var(--muted); list-style:none;">{{ _('Geavanceerd — je eigen Microsoft/Google-app gebruiken') }}</summary>
+        <div class="setup-note" style="margin-top:6px;">
+          {{ _('Wil je dat de toestemming binnen je eigen tenant blijft, met je eigen app-registratie?') }}
+          <a href="{{ url_for('web.connector_settings', from_onboarding=1) }}">{{ _('Eigen mailbox-app instellen') }} →</a>
+          {% if uses_own_ms or uses_own_google %}<span style="color:var(--accent);"> · {{ _('nu actief') }}</span>{% endif %}
+        </div>
+      </details>
+
+      <div style="display:flex; align-items:center; gap:10px; margin:20px 0 14px;">
+        <div style="flex:1; height:1px; background:var(--border);"></div>
+        <div style="font-size:12px; color:var(--muted);">{{ _('of later') }}</div>
+        <div style="flex:1; height:1px; background:var(--border);"></div>
+      </div>
+
+      <form method="post" action="{{ url_for('auth.onboarding_finish') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary" style="width:100%; height:42px;">{{ _('Naar Otto — ik koppel later') }} →</button>
+      </form>
+      <form method="post" action="{{ url_for('auth.onboarding_sample') }}" style="margin-top:8px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-ghost" style="width:100%; height:38px; font-size:13px;">{{ _('Of laad voorbeelddata om Otto te verkennen') }}</button>
+      </form>
+
+      <div class="principle" style="margin-top:20px;">
+        <div class="dot" style="background:var(--accent); margin-top:6px;"></div>
+        <div style="font-size:12.5px; color:var(--text-2); line-height:1.5;"><strong style="color:var(--heading-dark);">{{ _('Otto verzendt nooit zelf.') }}</strong> {{ _('Hij maakt enkel concepten — jij houdt altijd de controle en het laatste woord.') }}</div>
+      </div>
+    </div>
+    <div style="text-align:center; font-size:12.5px; color:var(--muted); margin-top:16px;">
+      <a href="{{ url_for('auth.logout') }}" style="color:var(--muted);">{{ _('Afmelden') }}</a>
+    </div>
+  </div>
+</div>
+
+{% set popup_admin_url = url_for('auth.oauth_microsoft_admin_consent') if (platform_graph and can_admin_consent) else None %}
+{% include "_connect_popup.html" with context %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% if needs_ai_key %}{% include "_byo_model_script.html" with context %}{% endif %}
+{% endblock %}

@@ -1,0 +1,21 @@
+{# Verdeling van de mail over de categorieën. #}
+{% if w.data.total %}
+  <div style="display:flex; flex-direction:column; gap:12px;">
+    {% for c in w.data.by_cat %}
+      <div>
+        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+          <span><span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:{{ c.color }}; margin-right:7px;"></span>{{ c.name }}</span>
+          <span style="color:var(--muted);">{{ c.count }} · {{ c.pct }}%</span>
+        </div>
+        <div style="height:8px; border-radius:5px; background:var(--surface-2); overflow:hidden;">
+          <div style="height:100%; width:{{ c.pct }}%; background:{{ c.color }};"></div>
+        </div>
+      </div>
+    {% endfor %}
+    {% if w.data.uncategorised > 0 %}
+      <div style="font-size:12px; color:var(--muted-3); margin-top:2px;">{% trans count=w.data.uncategorised %}{{ count }} nog niet gesorteerd{% endtrans %}</div>
+    {% endif %}
+  </div>
+{% else %}
+  <div style="font-size:13px; color:var(--muted);">{{ _('Geen mail in deze periode — kies een langere periode of koppel een mailbox.') }}</div>
+{% endif %}

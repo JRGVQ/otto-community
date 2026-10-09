@@ -1,0 +1,79 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Gebruikers') }} — {{ _('Beheer') }} — Otto{% endblock %}
+{% set status_colors = {'Actief':'#27AE60','Uitgenodigd':'#F2994A','Geblokkeerd':'#EB5757'} %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:940px;">
+    <div style="display:flex; align-items:center; margin-bottom:4px;">
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em; flex:1;">{{ _('Gebruikers') }}</div>
+      <button class="btn btn-primary" data-action="invite">{{ _('+ Gebruiker uitnodigen') }}</button>
+    </div>
+    <div class="page-sub">{{ _('Beheer wie toegang heeft en met welke rol. Rollen bepalen wat iemand kan zien en aanpassen.') }}</div>
+
+    <div class="table">
+      <div class="thead users-grid">
+        <div>{{ _('Gebruiker') }}</div><div>{{ _('Rol') }}</div><div>{{ _('Postvakken') }}</div><div>{{ _('Status') }}</div><div>{{ _('Laatst actief') }}</div>
+      </div>
+      {% for u in users %}
+        {% set sc = status_colors.get(u.status, '#9AA4B2') %}
+        <div class="trow users-grid">
+          <div style="display:flex; align-items:center; gap:11px; min-width:0;">
+            <div class="avatar avatar-34" style="background:{{ u.avatar_color }};">{{ u.initials }}</div>
+            <div style="min-width:0;">
+              <div class="nowrap" style="font-size:13.5px; font-weight:700;">{{ u.name }}</div>
+              <div class="nowrap" style="font-size:12px; color:var(--muted);">{{ u.email }}</div>
+            </div>
+          </div>
+          <div>
+            <select class="role-select" data-action="change-role" data-id="{{ u.id }}">
+              {% for r in role_options %}
+                <option value="{{ r }}" {{ 'selected' if u.role_name == r }}>{{ r }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="font-size:13px; color:var(--text-2);">{{ u.mailbox_count }}</div>
+          <div>
+            <span class="status-pill" style="color:{{ sc }}; background:{{ sc }}1A;">{{ u.status }}</span>
+            {% if u.status == 'Uitgenodigd' %}
+              <div style="margin-top:5px; display:flex; gap:8px; font-size:11.5px;">
+                <a href="#" data-action="invite-resend" data-id="{{ u.id }}" style="color:var(--accent); font-weight:700; text-decoration:none;">{{ _('Opnieuw sturen') }}</a>
+                <a href="#" data-action="invite-revoke" data-id="{{ u.id }}" style="color:var(--muted); text-decoration:none;">{{ _('Intrekken') }}</a>
+              </div>
+            {% endif %}
+          </div>
+          <div style="font-size:12.5px; color:var(--muted);">{{ u.last_active }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{# Invite-user modal — opened by the "+ Gebruiker uitnodigen" button (modals.js) #}
+<div id="user-modal" class="modal-overlay" style="display:none;">
+  <div class="modal pop" data-stop-propagation>
+    <div style="font-size:19px; font-weight:800; letter-spacing:-.01em; margin-bottom:6px;">{{ _('Gebruiker uitnodigen') }}</div>
+    <div style="font-size:13px; color:var(--text-2); line-height:1.5; margin-bottom:18px;">
+      {{ _('Een e-mailadres is genoeg — je collega kiest zelf een naam en wachtwoord via de uitnodigingsmail, of meldt aan met het werkaccount.') }}
+    </div>
+
+    <div class="label">{{ _('E-mailadres') }}</div>
+    <input id="user-email" type="email" class="input" style="margin-bottom:16px;" placeholder="jan@bedrijf.be">
+
+    <div class="label">{{ _('Naam') }} <span style="color:var(--muted); font-weight:400;">{{ _('(optioneel)') }}</span></div>
+    <input id="user-name" class="input" style="margin-bottom:16px;" placeholder="{{ _('Vult je collega anders zelf in') }}">
+
+    <div class="label">{{ _('Rol') }}</div>
+    <select id="user-role" class="input" style="margin-bottom:22px;">
+      {% for r in role_options if r != 'Eigenaar' %}
+        <option value="{{ r }}" {{ 'selected' if r == 'Gebruiker' }}>{{ r }}</option>
+      {% endfor %}
+    </select>
+
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span class="spacer"></span>
+      <button id="user-cancel" class="btn btn-ghost">{{ _('Annuleren') }}</button>
+      <button id="user-save" class="btn btn-primary">{{ _('Uitnodigen') }}</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

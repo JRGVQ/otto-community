@@ -1,0 +1,113 @@
+# Otto — production stack for one server.
+#
+#   cp .env.production.example .env      # then fill it in (see INSTALL.md)
+#   docker compose up -d --build                     # behind your own reverse proxy (port 8000)
+#   docker compose --profile caddy up -d --build     # with the bundled Caddy (automatic HTTPS)
+#
+# Services: PostgreSQL, Redis, the web app, a Celery worker and Celery beat. The web
+# container runs the database migrations on start; worker and beat wait until it is
+# healthy. All three app containers share the `otto_data` volume, where the entrypoint
+# keeps generated secrets (when you don't set SECRET_KEY / TOKEN_ENCRYPTION_KEY in .env).
+x-otto-app: &otto-app
+  build: .
+  image: otto:latest
+  restart: unless-stopped
+  env_file: .env
+  volumes:
+    - otto_data:/data
+
+x-otto-env: &otto-env
+  FLASK_APP: wsgi:app
+  FLASK_CONFIG: prod
+  DATABASE_URL: postgresql+psycopg://otto:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/otto
+  REDIS_URL: redis://redis:6379/0
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: otto
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: otto
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U otto"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  web:
+    <<: *otto-app
+    environment:
+      <<: *otto-env
+      RUN_MIGRATIONS: "1"
+      SEED_DEMO: "${SEED_DEMO:-0}"
+      WEB_CONCURRENCY: "${WEB_CONCURRENCY:-2}"
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    # Published on localhost only: put your reverse proxy (or the bundled Caddy) in front.
+    ports:
+      - "127.0.0.1:${OTTO_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=4)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+
+  worker:
+    <<: *otto-app
+    environment:
+      <<: *otto-env
+      RUN_MIGRATIONS: "0"
+    command: ["celery", "-A", "worker.celery", "worker", "--loglevel=info", "--concurrency=2"]
+    depends_on:
+      web: { condition: service_healthy }
+
+  beat:
+    <<: *otto-app
+    environment:
+      <<: *otto-env
+      RUN_MIGRATIONS: "0"
+    command: ["celery", "-A", "worker.celery", "beat", "--loglevel=info", "--schedule=/data/celerybeat-schedule"]
+    depends_on:
+      web: { condition: service_healthy }
+
+  # Optional edge proxy with automatic HTTPS (Let's Encrypt): `--profile caddy`.
+  # Point your domain's DNS at this server and set OTTO_DOMAIN in .env first.
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["caddy"]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      OTTO_DOMAIN: ${OTTO_DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  pgdata:
+  redisdata:
+  otto_data:
+  caddy_data:
+  caddy_config:

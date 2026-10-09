@@ -1,0 +1,54 @@
+{# Keeps the model dropdown in step with the chosen provider and reveals the free-text
+   field for "Anders…". The server-rendered markup is already correct on load; this only
+   re-renders the options when the provider changes, so no page reload is needed.
+
+   Expects: byo_model_catalogue, byo_model_hints, byo_model_custom, and the ids rendered
+   by _byo_model_field.html (plus a provider <select id="byo-provider">). #}
+<script nonce="{{ csp_nonce }}">
+  (function () {
+    var CATALOGUE = {{ byo_model_catalogue | tojson }};
+    var HINTS = {{ byo_model_hints | tojson }};
+    var CUSTOM = {{ byo_model_custom | tojson }};
+    var OTHER_LABEL = {{ _('Anders — zelf invullen…') | tojson }};
+    var MODEL_LABEL = {{ _('Model') | tojson }};
+    var DEPLOYMENT_LABEL = {{ _('(deployment)') | tojson }};
+
+    var provider = document.getElementById('byo-provider');
+    var model = document.getElementById('byo-model');
+    var custom = document.getElementById('byo-model-custom');
+    var hint = document.getElementById('byo-model-hint');
+    var label = document.getElementById('model-label');
+    if (!provider || !model || !custom) return;
+
+    function syncCustom() {
+      var isCustom = model.value === CUSTOM;
+      custom.style.display = isCustom ? '' : 'none';
+      if (hint) hint.textContent = isCustom ? (HINTS[provider.value] || '') : '';
+    }
+
+    function renderModels() {
+      var list = CATALOGUE[provider.value] || [];
+      model.innerHTML = '';
+      list.forEach(function (m) {
+        var o = document.createElement('option');
+        o.value = m.id;
+        o.textContent = m.label;
+        model.appendChild(o);
+      });
+      var other = document.createElement('option');
+      other.value = CUSTOM;
+      other.textContent = OTHER_LABEL;
+      model.appendChild(other);
+      // A provider with no preset list (Azure, OpenAI-compatible) goes straight to custom.
+      model.value = list.length ? list[0].id : CUSTOM;
+      if (label) {
+        label.textContent = MODEL_LABEL + (provider.value === 'azure' ? ' ' + DEPLOYMENT_LABEL : '');
+      }
+      syncCustom();
+    }
+
+    provider.addEventListener('change', renderModels);
+    model.addEventListener('change', syncCustom);
+    syncCustom();
+  })();
+</script>

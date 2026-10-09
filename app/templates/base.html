@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="mask-icon" href="{{ url_for('static', filename='favicon.svg') }}" color="#6C4CE6">
+  {# Apply the theme before first paint to avoid a flash of the wrong mode. #}
+  <script nonce="{{ csp_nonce }}">
+    (function () {
+      try {
+        var m = document.cookie.match(/(?:^|; )theme=([^;]+)/);
+        var t = m ? m[1] : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+        if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      } catch (e) {}
+    })();
+  </script>
+  <title>{% block title %}Otto — Jouw AI-e-mailassistent{% endblock %}</title>
+
+  {# A self-hosted instance has nothing to index: keep every page out of search engines. #}
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/screens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/teams.css') }}">
+</head>
+<body>
+  {% if impersonating %}
+  <div class="demo-banner" style="background:#EB5757; color:#fff;">
+    <span>👁️ <strong>Impersonatie</strong> — je bekijkt <strong>{{ impersonating.org }}</strong> als {{ impersonating.user }} (beheerder).</span>
+    <form method="post" action="{{ url_for('auth.stop_impersonation') }}" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" style="background:none; border:none; color:#fff; font:inherit; text-decoration:underline; cursor:pointer;">Stoppen ↩</button>
+    </form>
+  </div>
+  {% endif %}
+  {% block body %}{% endblock %}
+
+  {# Global toasts (from flashed messages — survive a redirect/reload) #}
+  <div id="toast-host">
+    {% with msgs = get_flashed_messages(category_filter=['toast']) %}
+      {% for m in msgs %}
+        <div class="toast pop" data-autodismiss><span class="dot"></span>{{ m }}</div>
+      {% endfor %}
+    {% endwith %}
+  </div>
+
+  {# Floating theme toggle for pages without an app top bar (auth, docs, errors). #}
+  <button id="theme-fab" class="theme-toggle" data-action="theme-toggle" aria-label="Licht/donker thema">
+    <span class="t-moon">🌙</span><span class="t-sun">☀</span>
+  </button>
+
+  {# Localized strings for client-side JS (dialogs in otto.js/modals.js + inline handlers).
+     T('<dutch source>') returns the visitor's-language string, falling back to the source. #}
+  <script nonce="{{ csp_nonce }}">
+    window.OTTO_I18N = {{ otto_js_i18n|tojson }};
+    function T(s) { return (window.OTTO_I18N && window.OTTO_I18N[s]) || s; }
+  </script>
+  <script src="{{ url_for('static', filename='js/otto.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/behaviors.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

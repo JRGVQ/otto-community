@@ -1,0 +1,288 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Integraties') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:900px;">
+    <div class="page-h">{{ _('Integraties') }}</div>
+    <div class="page-sub">{{ _('Koppel je mailbox om te starten. De overige integraties volgen binnenkort.') }}</div>
+
+    {# ── Mailbox: ECHTE OAuth-koppeling (Microsoft 365 / Gmail) ───────────── #}
+    <div class="integ-card" style="margin-bottom:20px; align-items:center;">
+      <div class="integ-icon" style="background:#0078D4;">M</div>
+      <div class="min0" style="flex:1;">
+        <div style="font-size:14.5px; font-weight:700;">{{ _('Mailbox') }}</div>
+        {% set personal_accounts = me.mail_accounts | rejectattr('is_shared') | list %}
+        {% if personal_accounts %}
+          {% for a in personal_accounts %}
+            <div style="font-size:12.5px; color:var(--muted); line-height:1.5;">
+              {{ a.provider|capitalize }} · {{ a.email }} ·
+              {% if a.status == 'error' %}<span style="color:#C0392B; font-weight:700;">{{ _('fout') }}</span>{% else %}<span style="color:var(--success);">{{ a.status }}</span>{% endif %}{% if a.last_sync %} · {% trans t=a.last_sync %}gesynct {{ t }}{% endtrans %}{% endif %}
+              · <button type="button" data-action="test-mailbox" data-id="{{ a.id }}" style="background:none; border:0; padding:0; color:var(--accent, #6C4CE6); font:inherit; cursor:pointer; text-decoration:underline;">{{ _('Test verbinding') }}</button>
+              · <button type="button" data-action="disconnect-mailbox" data-id="{{ a.id }}" style="background:none; border:0; padding:0; color:#C0392B; font:inherit; cursor:pointer; text-decoration:underline;">{{ _('Loskoppelen') }}</button>
+            </div>
+            {% if a.last_error %}
+              <div style="font-size:12px; color:#C0392B; line-height:1.4; margin:1px 0 4px;">⚠ {{ a.last_error }}</div>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <div style="font-size:12.5px; color:var(--muted); line-height:1.45;">
+            {{ _('Nog geen mailbox gekoppeld — koppel hieronder om Otto je mail te laten sorteren.') }}
+          </div>
+        {% endif %}
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        {% if capabilities.graph %}
+          <a class="btn btn-primary btn-sm" data-connect-popup="outlook" href="{{ url_for('auth.oauth_microsoft') }}">
+            {{ _('Opnieuw koppelen') if me.mail_accounts else _('Koppel Microsoft 365') }}
+          </a>
+        {% endif %}
+        {% if capabilities.gmail %}
+          <a class="btn btn-secondary btn-sm" data-connect-popup="gmail" href="{{ url_for('auth.oauth_google') }}">{{ _('Koppel Gmail') }}</a>
+        {% endif %}
+        {% if not capabilities.graph and not capabilities.gmail %}
+          <span class="pill" style="font-size:12px; color:var(--muted);">{{ _('Koppeling nog niet geconfigureerd') }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ── Microsoft 365: 1-klik goedkeuring voor de hele organisatie ──────── #}
+    {% if capabilities.graph and can_manage_providers %}
+    <div class="integ-card" style="margin-bottom:20px; align-items:center; gap:12px;">
+      <div class="integ-icon" style="background:{{ '#27AE60' if graph_admin_consented_at else '#0078D4' }};">✓</div>
+      <div class="min0" style="flex:1;">
+        <div style="font-size:14.5px; font-weight:700;">{{ _('Goedkeuring voor je organisatie') }}</div>
+        {% if graph_admin_consented_at %}
+          <div style="font-size:12.5px; color:var(--success); line-height:1.45; margin-top:2px;">
+            ✓ {% trans date=graph_admin_consented_at|fulltime %}Goedgekeurd op {{ date }} — collega's koppelen hun postvak in één klik, zonder los toestemmingsscherm.{% endtrans %}
+          </div>
+        {% else %}
+          <div style="font-size:12.5px; color:var(--muted); line-height:1.45; margin-top:2px;">
+            {{ _('Ben je Microsoft 365-beheerder? Koppel je postvak én keur Otto in één klik goed voor je hele organisatie. Daarna koppelt iedereen zijn postvak zonder verdere toestemming — niemand hoeft iets te registreren of in te vullen.') }}
+          </div>
+        {% endif %}
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+        <a class="btn {{ 'btn-secondary' if graph_admin_consented_at else 'btn-primary' }} btn-sm"
+           href="{{ url_for('auth.oauth_microsoft_admin_consent') }}">
+          {{ _('Opnieuw goedkeuren') if graph_admin_consented_at else _('Koppelen & goedkeuren') }}
+        </a>
+        <a href="{{ url_for('auth.oauth_microsoft_admin_consent', koppel=0) }}"
+           style="font-size:12px; color:var(--accent); white-space:nowrap;">
+          {{ _('Alleen goedkeuren — zonder mijn postvak te koppelen') }}
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if me.role and me.role.is_owner %}
+      <div style="font-size:12.5px; margin:-8px 0 18px;">
+        <a href="{{ url_for('web.connector_settings') }}" style="color:var(--accent); font-weight:600;">
+          {{ _('Eigen Microsoft/Google-app gebruiken (geavanceerd) →') }}
+        </a>
+      </div>
+    {% endif %}
+
+    {# ── Gedeelde (team)postvakken — Exchange shared mailboxes ───────────── #}
+    {% if can_add_shared or shared_mailboxes %}
+    <div class="integ-card" style="margin-bottom:20px; flex-direction:column; align-items:stretch; gap:14px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="integ-icon" style="background:#5B5FC7;">T</div>
+        <div class="min0" style="flex:1;">
+          <div style="font-size:14.5px; font-weight:700;">{{ _('Gedeelde postvakken (Teams)') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); line-height:1.45; margin-top:2px;">
+            {{ _('Koppel een gedeeld postvak (bv. support@, info@) waartoe jij toegang hebt. Alleen leden zien de mail; jullie kunnen er intern over overleggen met notities.') }}
+          </div>
+        </div>
+      </div>
+
+      {% if shared_mailboxes %}
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          {% for s in shared_mailboxes %}
+            <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px;">
+              <div class="min0" style="flex:1;">
+                <div style="font-size:13.5px; font-weight:600;">{{ s.address }}</div>
+                <div style="font-size:12px; color:var(--muted);">
+                  {{ s.member_count }} {{ _('lid') if s.member_count == 1 else _('leden') }}: {{ s.members|join(', ') }}
+                </div>
+              </div>
+              <a class="btn btn-secondary btn-sm" href="{{ url_for('web.inbox', mailbox=s.id) }}">{{ _('Open') }}</a>
+              <button class="btn-discard" style="height:32px;" data-action="leave-shared" data-id="{{ s.id }}">{{ _('Verlaten') }}</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if can_add_shared %}
+        <div data-shared-add style="display:flex; gap:8px;">
+          <input class="input" type="email" placeholder="support@jouwbedrijf.be" style="flex:1;">
+          <button class="btn btn-primary btn-sm" data-action="add-shared">{{ _('Toevoegen') }}</button>
+        </div>
+      {% elif capabilities.graph %}
+        <div style="font-size:12.5px; color:var(--muted);">
+          {{ _('Koppel eerst je eigen Microsoft 365-postvak hierboven om gedeelde postvakken te kunnen toevoegen.') }}
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# ── Kennisbron (SharePoint) — grond AI-antwoorden in je documentatie ── #}
+    {% if can_manage_knowledge or knowledge_sources %}
+    <div class="integ-card" style="margin-bottom:20px; flex-direction:column; align-items:stretch; gap:14px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="integ-icon" style="background:#0078D4;">K</div>
+        <div class="min0" style="flex:1;">
+          <div style="font-size:14.5px; font-weight:700;">{{ _('Kennisbron (SharePoint)') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); line-height:1.45; margin-top:2px;">
+            {{ _('Koppel een SharePoint-bibliotheek zodat Otto antwoorden onderbouwt met je documentatie — met bronvermelding. Documenten blijven in Microsoft 365.') }}
+          </div>
+        </div>
+      </div>
+
+      {% if knowledge_sources %}
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          {% for k in knowledge_sources %}
+            <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px;">
+              <div class="min0" style="flex:1;">
+                <div style="font-size:13.5px; font-weight:600;">{{ k.name }}</div>
+                <div style="font-size:12px; color:var(--muted); word-break:break-all;">{{ k.site_url }}</div>
+              </div>
+              <span class="pill pill-success">{{ k.status }}</span>
+              {% if can_manage_knowledge %}
+                <button class="btn-discard" style="height:32px;" data-action="remove-knowledge" data-id="{{ k.id }}">{{ _('Verwijderen') }}</button>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if can_manage_knowledge and knowledge_configured %}
+        <div data-knowledge-add style="display:flex; gap:8px; flex-wrap:wrap;">
+          <input class="input" name="name" type="text" placeholder="{{ _('Naam (bv. Beleid & FAQ)') }}" style="flex:1; min-width:160px;">
+          <input class="input" name="site_url" type="url" placeholder="https://bedrijf.sharepoint.com/sites/…" style="flex:2; min-width:220px;">
+          <button class="btn btn-primary btn-sm" data-action="add-knowledge">{{ _('Koppelen') }}</button>
+        </div>
+      {% elif can_manage_knowledge and not knowledge_configured %}
+        <div style="font-size:12.5px; color:var(--muted);">
+          {{ _('De SharePoint-connector is nog niet geconfigureerd. Zet') }} <code>GRAPH_KNOWLEDGE_*</code>
+          {{ _('(eigen app met') }} <code>Sites.Read.All</code>{{ _(') in de omgeving om kennisbronnen te kunnen koppelen.') }}
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# ── Eigen CRM — log klantmail bij het juiste contact (app/crm/) ────── #}
+    {% if can_manage_providers or crm_connections | selectattr('ready') | list %}
+      <div style="font-size:13.5px; font-weight:700; margin:4px 0 10px;">{{ _('Jouw CRM') }}</div>
+      <div style="font-size:12.5px; color:var(--muted); line-height:1.5; margin:-6px 0 14px;">
+        {{ _('Koppel je eigen CRM, dan logt Otto inkomende klantmail automatisch mee. Meerdere koppelingen tegelijk kan; elke ingeschakelde koppeling krijgt de mail.') }}
+      </div>
+    {% endif %}
+    {% for c in crm_connections %}
+    {% if can_manage_providers or c.ready %}
+    <div class="integ-card" style="margin-bottom:20px; flex-direction:column; align-items:stretch; gap:14px;">
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <div class="integ-icon" style="background:{{ c.color }};">{{ c.tag }}</div>
+        <div class="min0" style="flex:1;">
+          <div style="font-size:14.5px; font-weight:700;">{{ c.name }}</div>
+          <div style="font-size:12.5px; color:var(--muted); line-height:1.45; margin-top:2px;">
+            {{ c.description }}
+          </div>
+        </div>
+        {% if c.ready %}
+          <span class="integ-btn on" style="cursor:default;">{{ _('Actief ✓') }}</span>
+        {% elif c.enabled %}
+          <span class="integ-btn off" style="cursor:default;">{{ _('Onvolledig') }}</span>
+        {% else %}
+          <span class="integ-btn off" style="cursor:default;">{{ _('Uit') }}</span>
+        {% endif %}
+      </div>
+      {% if can_manage_providers %}
+      <form method="post" action="{{ url_for('web.integrations_crm', provider=c.provider) }}" style="display:flex; flex-direction:column; gap:10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          {% for f in c.fields %}
+          <label style="font-size:12.5px;">{{ f.label }}
+            {% if f.name == 'api_key' %}
+              <input class="input" type="password" name="api_key" autocomplete="new-password"
+                     placeholder="{{ _('Ongewijzigd laten') if c.has_key else f.placeholder }}">
+            {% else %}
+              <input class="input" type="{{ f.type }}" name="{{ f.name }}"
+                     placeholder="{{ f.placeholder }}" value="{{ c.field_values[f.name] }}">
+            {% endif %}
+          </label>
+          {% endfor %}
+        </div>
+        <label style="font-size:12.5px; display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" name="enabled" {{ 'checked' if c.enabled }}> {{ _('Koppeling inschakelen') }}
+        </label>
+        <label style="font-size:12.5px; display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" name="log_incoming" {{ 'checked' if c.log_incoming }}>
+          {{ _('Inkomende klantmail doorsturen') if c.provider == 'webhook' else _('Inkomende klantmail loggen') }}
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn btn-primary btn-sm" type="submit">{{ _('Opslaan') }}</button>
+          {% if c.ready %}
+            <button class="btn btn-secondary btn-sm" type="button" data-action="test-crm" data-provider="{{ c.provider }}">
+              {{ _('Test verbinding') }}
+            </button>
+          {% endif %}
+        </div>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {# ── Outlook-taakvenster (fase 6.7) — Otto naast je mail in Outlook ── #}
+    <div class="integ-card" style="margin-bottom:20px; flex-direction:column; align-items:stretch; gap:12px;">
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <div class="integ-icon" style="background:#0F6CBD;">▤</div>
+        <div class="min0" style="flex:1;">
+          <div style="font-size:14.5px; font-weight:700;">{{ _('Outlook-taakvenster') }}</div>
+          <div style="font-size:12.5px; color:var(--muted); line-height:1.45; margin-top:2px;">
+            {{ _('Zie náást je mail in Outlook wat Otto klaarzette: de categorie, het concept-antwoord, de gekoppelde taken en je snippets. Geen aparte app — hetzelfde als in Otto, waar je toch al werkt.') }}
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; color:var(--muted); line-height:1.5;">
+        {{ _('Installeren: in Outlook → Invoegtoepassingen ophalen → Mijn invoegtoepassingen → Aangepaste invoegtoepassing → Uit URL, en plak:') }}
+        <div style="margin-top:6px;">
+          <code style="user-select:all; word-break:break-all;">{{ url_for('addin.manifest', _external=True) }}</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="integ-grid">
+      {% for i in integrations %}
+        <div class="integ-card">
+          <div class="integ-icon" style="background:{{ i.color }};">{{ i.tag }}</div>
+          <div class="min0" style="flex:1;">
+            <div style="font-size:14.5px; font-weight:700;">{{ i.name }}</div>
+            <div style="font-size:12.5px; color:var(--muted); line-height:1.45; margin-top:2px;">{{ i.description }}</div>
+            {% if i.testable %}
+              <div style="font-size:12px; margin-top:3px;">
+                <button type="button" data-action="test-integration" data-key="{{ i.key }}"
+                        style="background:none; border:0; padding:0; color:var(--accent, #6C4CE6); font:inherit; cursor:pointer; text-decoration:underline;">
+                  {{ _('Test verbinding') }}
+                </button>
+              </div>
+            {% elif i.live and not i.connected %}
+              <div style="font-size:12px; color:var(--muted); margin-top:3px;">{{ _('Koppel eerst je Microsoft 365-postvak hierboven.') }}</div>
+            {% endif %}
+          </div>
+          {% if i.connected %}
+            <span class="integ-btn on" style="cursor:default;">{{ _('Gekoppeld ✓') }}</span>
+          {% elif i.live %}
+            <span class="integ-btn off" style="cursor:default;">{{ _('Niet gekoppeld') }}</span>
+          {% else %}
+            <span class="integ-btn off" style="cursor:default; opacity:.65;">{{ _('Binnenkort') }}</span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% set popup_admin_url = url_for('auth.oauth_microsoft_admin_consent') if (capabilities.graph and can_manage_providers and not graph_admin_consented_at) else None %}
+{% include "_connect_popup.html" with context %}
+{% endblock %}

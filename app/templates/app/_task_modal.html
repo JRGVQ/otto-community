@@ -1,0 +1,90 @@
+{# Task create/edit modal — hidden until opened by tasks.js. Covers the To Do feature
+   set (notes, steps, reminder, repeat, importance) + the destination (Otto / a To Do
+   list / Planner). Planner-only fields live in #task-planner-fields. #}
+<div id="task-modal" class="modal-overlay" style="display:none;" data-graph="{{ '1' if capabilities.graph else '0' }}">
+  <div class="modal pop" data-stop-propagation>
+    <div id="task-modal-title" style="font-size:19px; font-weight:800; letter-spacing:-.01em; margin-bottom:18px;">{{ _('Nieuwe taak') }}</div>
+    <input type="hidden" id="task-id" value="">
+
+    <div class="label">{{ _('Titel') }}</div>
+    <input id="task-title" class="input" style="margin-bottom:14px;" placeholder="{{ _('Wat moet er gebeuren?') }}" />
+
+    <div class="label">{{ _('Notities') }}</div>
+    <textarea id="task-notes" class="textarea" style="min-height:64px; margin-bottom:14px;" placeholder="{{ _('Details, links, context…') }}"></textarea>
+
+    <div style="display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+      <div style="flex:1; min-width:150px;">
+        <div class="label">{{ _('Deadline') }}</div>
+        <input id="task-due" type="date" class="input" />
+      </div>
+      <div style="flex:1; min-width:150px;">
+        <div class="label">{{ _('Herinnering') }}</div>
+        <input id="task-reminder" type="datetime-local" class="input" />
+      </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-bottom:14px; align-items:flex-end; flex-wrap:wrap;">
+      <div style="flex:1; min-width:140px;">
+        <div class="label">{{ _('Herhaling') }}</div>
+        <select id="task-recurrence" class="input">
+          <option value="">{{ _('Niet herhalen') }}</option>
+          <option value="daily">{{ _('Dagelijks') }}</option>
+          <option value="weekdays">{{ _('Elke werkdag') }}</option>
+          <option value="weekly">{{ _('Wekelijks') }}</option>
+          <option value="monthly">{{ _('Maandelijks') }}</option>
+          <option value="yearly">{{ _('Jaarlijks') }}</option>
+        </select>
+      </div>
+      <div id="task-recur-interval-wrap" style="display:none;">
+        <div class="label">{{ _('Elke') }}</div>
+        <input id="task-recur-interval" type="number" min="1" value="1" class="input" style="width:72px;" title="{{ _('Interval (bv. elke 2 weken)') }}" />
+      </div>
+      <button type="button" id="task-important" class="btn btn-ghost" style="height:40px;">☆ {{ _('Belangrijk') }}</button>
+    </div>
+
+    <div class="label">{{ _('Stappen') }}</div>
+    <div id="task-steps" style="display:flex; flex-direction:column; gap:6px; margin-bottom:6px;"></div>
+    <div id="task-add-step" style="font-size:12.5px; font-weight:700; color:var(--accent); cursor:pointer; margin-bottom:16px;">{{ _('+ Stap toevoegen') }}</div>
+
+    {% if capabilities.graph %}
+    <div id="task-dest-wrap">
+    <div class="label">{{ _('Opslaan in') }}</div>
+    <select id="task-dest" class="input" style="margin-bottom:14px;">
+      <option value="">{{ _('Alleen in Otto') }}</option>
+      <optgroup id="task-dest-todo" label="Microsoft To Do"></optgroup>
+      <option value="planner">Microsoft Planner — {{ _('toewijzen aan collega') }}</option>
+    </select>
+
+    <div id="task-planner-fields" style="display:none;">
+      <div class="label">{{ _('Plan') }}</div>
+      <select id="task-plan" class="input" style="margin-bottom:14px;"><option value="">{{ _('— Kies een plan —') }}</option></select>
+      <div id="task-bucket-wrap" style="display:none;">
+        <div class="label">{{ _('Bucket') }}</div>
+        <select id="task-bucket" class="input" style="margin-bottom:14px;"><option value="">{{ _('— Geen bucket —') }}</option></select>
+      </div>
+      <div class="label">{{ _('Toewijzen aan') }}</div>
+      <div id="task-assignee-chosen" class="task-assignee-chip" style="display:none;">
+        <span id="task-assignee-label"></span>
+        <span id="task-assignee-clear" title="{{ _('Wissen') }}" style="cursor:pointer; font-weight:800;">×</span>
+      </div>
+      <input id="task-assignee-search" class="input" placeholder="{{ _('Zoek een collega in je M365…') }}" autocomplete="off" style="margin-bottom:6px;" />
+      <div id="task-assignee-results" class="task-people"></div>
+    </div>
+    </div>{# /task-dest-wrap #}
+    {% endif %}
+
+    <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+      <span class="spacer"></span>
+      <button id="task-cancel" class="btn btn-ghost">{{ _('Annuleren') }}</button>
+      <button id="task-save" class="btn btn-primary">{{ _('Taak aanmaken') }}</button>
+    </div>
+  </div>
+</div>
+
+{# Cloned per step row #}
+<template id="task-step-template">
+  <div class="task-step-row" style="display:flex; gap:8px; align-items:center;">
+    <input class="step-title input" style="flex:1; height:36px;" placeholder="{{ _('Stap…') }}" />
+    <div class="step-remove" title="{{ _('Verwijderen') }}" style="width:32px; height:32px; border-radius:8px; flex:none; display:flex; align-items:center; justify-content:center; color:var(--danger-soft); cursor:pointer; background:var(--surface); border:1px solid var(--border);">×</div>
+  </div>
+</template>

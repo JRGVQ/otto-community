@@ -1,0 +1,91 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Taken') }} — Otto{% endblock %}
+{% set recur_labels = {'daily':_('Dagelijks'),'weekdays':_('Werkdagen'),'weekly':_('Wekelijks'),'monthly':_('Maandelijks'),'yearly':_('Jaarlijks')} %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:780px;">
+    <div class="page-head-row">
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ _('Taken') }}
+        <span style="font-size:14px; font-weight:700; color:var(--muted);">· <span data-open-count>{{ open_count }}</span> {{ _('open') }}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="tag" style="font-size:12px; color:#2D6BDB; background:#EAF1FD; padding:4px 10px; border-radius:8px;">Microsoft To&nbsp;Do · Planner</div>
+        <button class="btn btn-primary" data-task-new>{{ _('+ Taak toevoegen') }}</button>
+      </div>
+    </div>
+    <div class="page-sub">{{ _('Volledig gesynct met') }} Microsoft To&nbsp;Do {{ _('(lijsten, stappen, notities, herinnering, herhaling) en koppelbaar aan een Planner-plan met een collega.') }}</div>
+
+    {% if todo_lists %}
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+      <a href="{{ url_for('web.tasks') }}" class="task-list-pill {{ 'active' if not active_list_id }}">{{ _('Alle') }}</a>
+      {% for l in todo_lists %}
+        <a href="{{ url_for('web.tasks', list=l.id) }}" class="task-list-pill {{ 'active' if active_list_id == l.id }}">{{ l.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      {% for t in tasks %}
+        <div class="task-card">
+          <div class="check {{ 'green on' if t.done }}" data-action="toggle-task" data-id="{{ t.id }}">{{ '✓' if t.done }}</div>
+          <div class="min0" style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              {% if t.important %}<span title="{{ _('Belangrijk') }}" style="color:#E2B100;">★</span>{% endif %}
+              <div class="task-title {{ 'done' if t.done }}">{{ t.title }}</div>
+            </div>
+            {% if t.notes %}<div style="font-size:12.5px; color:var(--muted); margin-top:3px; white-space:pre-wrap;">{{ t.notes|truncate(160) }}</div>{% endif %}
+            {% if t.context and not t.notes %}<div style="font-size:12.5px; color:var(--muted); margin-top:2px;">{{ t.context }}</div>{% endif %}
+
+            <div style="display:flex; gap:8px; margin-top:9px; align-items:center; flex-wrap:wrap;">
+              <span class="tag" style="font-size:11.5px; color:var(--accent-soft-text); background:var(--purple-150); padding:3px 9px;">{{ t.plan_name or t.list_name }}</span>
+              {% if t.bucket_name %}<span class="tag" style="font-size:11.5px; color:var(--muted); background:var(--bg); padding:3px 9px;">{{ t.bucket_name }}</span>{% endif %}
+              {% set overdue = t.due_date and not t.done and today and t.due_date < today %}
+              {% if t.due_display and t.due_display != 'Geen datum' %}<span class="due {{ 'urgent' if (t.urgent or overdue) and not t.done }}">{{ '⚠ ' if overdue }}{{ t.due_display }}</span>{% endif %}
+              {% if t.reminder_at %}<span class="tag" style="font-size:11.5px; color:var(--muted);">🔔 {{ t.reminder_at.strftime('%d-%m %H:%M') }}</span>{% endif %}
+              {% if t.recurrence %}<span class="tag" style="font-size:11.5px; color:var(--muted);">🔁 {{ recur_labels.get(t.recurrence, t.recurrence) }}{% if t.recurrence_interval and t.recurrence_interval > 1 %} ×{{ t.recurrence_interval }}{% endif %}</span>{% endif %}
+              {% if t.assignee_name %}<span class="tag" style="font-size:11.5px; color:#2D6BDB; background:#EAF1FD; padding:3px 9px;">👤 {{ t.assignee_name }}</span>{% endif %}
+              {% if t.provider_kind == 'todo' %}<span class="tag" style="font-size:11px; color:var(--muted-3);">To&nbsp;Do</span>{% elif t.provider_kind == 'planner' %}<span class="tag" style="font-size:11px; color:var(--muted-3);">Planner</span>{% endif %}
+              {% if t.linked_subject %}<span style="font-size:11.5px; color:var(--muted-3);">↳ {{ t.linked_subject }}</span>{% endif %}
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:4px; margin-top:10px; padding-left:2px;">
+              {% for s in t.steps %}
+                <div class="task-step-line">
+                  <div class="step-check {{ 'on' if s.done }}" data-action="toggle-step" data-task="{{ t.id }}" data-id="{{ s.id }}">{{ '✓' if s.done }}</div>
+                  <span class="{{ 'done' if s.done }}" style="font-size:12.5px;">{{ s.title }}</span>
+                  <span class="step-del" data-action="delete-step" data-task="{{ t.id }}" data-id="{{ s.id }}" title="{{ _('Verwijderen') }}">×</span>
+                </div>
+              {% endfor %}
+              <input class="step-add" data-task="{{ t.id }}" placeholder="{{ _('+ stap toevoegen…') }}" autocomplete="off" />
+            </div>
+
+            {% if t.attachments or (t.provider_kind == 'todo' and t.provider_task_id) %}
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:9px;">
+              {% for a in t.attachments %}
+                <span class="task-attach">
+                  <a href="{{ url_for('web.download_attachment', task_id=t.id, att_id=a.id) }}">📎 {{ a.name }}</a>
+                  <span class="attach-del" data-action="delete-attachment" data-task="{{ t.id }}" data-id="{{ a.id }}" title="{{ _('Verwijderen') }}">×</span>
+                </span>
+              {% endfor %}
+              {% if t.provider_kind == 'todo' and t.provider_task_id %}
+                <label class="task-attach-add" title="{{ _('Bestand toevoegen (max 3 MB)') }}">📎 {{ _('Bestand') }}
+                  <input type="file" class="attach-input" data-task="{{ t.id }}" style="display:none;" />
+                </label>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+          <div class="task-actions">
+            <span data-task-edit data-payload='{{ t.to_modal_dict()|tojson }}' title="{{ _('Bewerken') }}">✎</span>
+            <span data-action="delete-task" data-id="{{ t.id }}" title="{{ _('Verwijderen') }}">🗑</span>
+          </div>
+        </div>
+      {% else %}
+        <div class="card" style="padding:26px; text-align:center; color:var(--muted);">
+          {% if active_list_id %}{{ _('Geen taken in deze lijst.') }}{% else %}{{ _('Nog geen taken. Maak er een aan met') }} <strong>{{ _('“+ Taak toevoegen”') }}</strong>{{ _(', of vanaf een e-mail in je inbox.') }}{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

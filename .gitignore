@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Flask / instance
+instance/
+*.db
+*.sqlite3
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Local tooling / editor config
+.claude/
+.vscode/
+.idea/
+docker-compose.override.yml
+
+# Tooling
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store

@@ -1,0 +1,21 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Problemen oplossen') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Problemen oplossen') }}</h1>
+<div class="sub">{{ _('De meeste problemen los je zelf op, zonder support.') }}</div>
+
+<h3>{{ _('Mail komt verkeerd binnen (bijvoorbeeld als spam) of zonder onderwerp en afzender') }}</h3>
+<p>{{ _('Dit kwam voor bij postvakken die in een bepaalde periode zijn gekoppeld: nieuwe mail werd leeg opgehaald en daardoor verkeerd gesorteerd. Dit is opgelost, en je postvak herstelt zichzelf automatisch bij de volgende synchronisatie — je hoeft niets te herkoppelen.') }}</p>
+<p>{{ _('Wil je de al binnengekomen mail meteen rechtzetten? Ga naar') }} <strong>{{ _('Categorieën') }}</strong> {{ _('en klik op') }} <strong>{{ _('“↻ Alles opnieuw sorteren”') }}</strong>. {{ _('Otto haalt dan de inhoud van je bestaande inbox opnieuw op en categoriseert alles opnieuw. Dit kan bij een grote inbox even duren.') }}</p>
+
+<h3>{{ _('Een mail zit in de verkeerde categorie') }}</h3>
+<p>{{ _('Open de mail en gebruik de “verplaats naar”-knoppen bovenaan het leespaneel om hem in de juiste categorie te zetten. Wil je dat Otto zulke mail voortaan anders sorteert? Pas dan de AI-instructie of de regels van die categorie aan bij') }} <strong>{{ _('Categorieën') }}</strong>.</p>
+
+<h3>{{ _('Nieuwe mail verschijnt niet') }}</h3>
+<p>{{ _('Otto synchroniseert automatisch op de achtergrond. Controleer bij') }} <strong>{{ _('Integraties') }}</strong> {{ _('of je postvak nog verbonden is; staat er een foutmelding, koppel het postvak dan opnieuw. Je kan daar ook handmatig synchroniseren.') }}</p>
+
+<h3>{{ _('Otto maakt geen concepten') }}</h3>
+<p>{{ _('Concepten worden alleen gemaakt voor categorieën waarvoor dat aanstaat (en nooit voor ruis). Controleer bij') }} <strong>{{ _('Categorieën') }}</strong> {{ _('of “Maakt concepten” aanstaat voor de juiste categorie. Op het Connect-plan is bovendien je eigen AI-sleutel nodig (Beheer → AI & model).') }}</p>
+
+<div class="note">{{ _('Blijft het probleem? Neem contact op met de beheerder van je Otto-installatie.') }}</div>
+{% endblock %}

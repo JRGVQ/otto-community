@@ -1,0 +1,70 @@
+{% extends "owner/layout.html" %}
+{% block title %}{{ _('Platform — Debug & errors') }}{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:1000px;">
+    <div style="display:flex; align-items:center; margin-bottom:4px;">
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em; flex:1;">{{ _('Debug & errors') }}</div>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('owner.debug_test_error') }}" style="margin-right:8px;">{{ _('Test-fout opwekken') }}</a>
+      <form method="post" action="{{ url_for('owner.debug_clear') }}" data-confirm="Foutenlog wissen?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger);">{{ _('Wissen') }}</button>
+      </form>
+    </div>
+    <div class="page-sub">{% trans total=total %}Server-side fouten (5xx) met volledige traceback. {{ total }} in totaal.{% endtrans %}</div>
+
+    {# GitHub-melding: status van de automatische issue-aanmaak bij een foutenpiek. #}
+    <div class="card card-18" style="padding:14px 18px; margin-bottom:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span class="tag" style="background:{{ 'var(--success-bg)' if alerting.enabled else 'var(--warn-bg, var(--danger-bg))' }}; color:{{ 'var(--success)' if alerting.enabled else 'var(--muted)' }}; font-weight:800;">
+        {{ _('GitHub-meldingen') }}
+      </span>
+      <span style="flex:1; min-width:220px; font-size:13px; color:var(--text-2);">
+        {% if alerting.enabled %}
+          {% trans n=alerting.threshold, m=alerting.window, repo=alerting.repo %}Bij {{ n }} keer dezelfde fout binnen {{ m }} minuten wordt automatisch een issue aangemaakt in {{ repo }}.{% endtrans %}
+        {% else %}
+          {{ _('Uit. Zet GITHUB_ISSUE_REPO en GITHUB_TOKEN om automatisch een issue te laten aanmaken bij een foutenpiek.') }}
+        {% endif %}
+      </span>
+      {% if alerting.enabled %}
+        <form method="post" action="{{ url_for('owner.alerts_check') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost btn-sm">{{ _('Nu controleren') }}</button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <a class="tone {{ 'active' if not filter_status }}" style="padding:7px 14px; border-radius:9px;" href="{{ url_for('owner.debug') }}">{{ _('Alle') }}</a>
+      <a class="tone {{ 'active' if filter_status==500 }}" style="padding:7px 14px; border-radius:9px;" href="{{ url_for('owner.debug', status=500) }}">500</a>
+    </div>
+
+    {% if not errors %}
+      <div class="card card-18" style="padding:40px; text-align:center; color:var(--muted);">
+        <div style="font-size:32px; margin-bottom:8px;">✓</div>
+        <div style="font-size:15px; font-weight:700; color:var(--text-2);">{{ _('Geen fouten geregistreerd') }}</div>
+        <div style="font-size:13px; margin-top:3px;">{{ _('Als er iets misgaat, verschijnt het hier met volledige traceback.') }}</div>
+      </div>
+    {% else %}
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for e in errors %}
+          <details class="card" style="padding:0; overflow:hidden;">
+            <summary style="list-style:none; cursor:pointer; padding:14px 18px; display:flex; align-items:center; gap:12px;">
+              <span class="tag" style="background:var(--danger-bg); color:var(--danger); font-weight:800;">{{ e.status_code }}</span>
+              <span style="font-family:ui-monospace,monospace; font-size:12.5px; font-weight:700;">{{ e.exception_type }}</span>
+              <span class="nowrap" style="flex:1; min-width:0; font-size:13px; color:var(--text-2);">{{ e.short_message }}</span>
+              <span style="font-size:11.5px; color:var(--muted);">{{ e.method }} {{ e.path }}</span>
+              <span style="font-size:11.5px; color:var(--muted-2);">{{ e.occurred_at.strftime('%d/%m %H:%M') if e.occurred_at }}</span>
+            </summary>
+            <div style="padding:0 18px 16px;">
+              <div style="font-size:12px; color:var(--muted); margin-bottom:8px;">
+                {% if e.user_email %}{{ e.user_email }}{% if e.org_name %} · {{ e.org_name }}{% endif %} · {% endif %}{{ _('endpoint') }} <code>{{ e.endpoint }}</code> · {{ _('request') }} <code>{{ e.request_id }}</code>
+              </div>
+              <pre style="white-space:pre-wrap; word-break:break-word; font-size:11.5px; line-height:1.5; background:var(--surface-3); border:1px solid var(--border); border-radius:9px; padding:12px 14px; max-height:340px; overflow:auto; margin:0; color:var(--body-text-3);">{{ e.traceback }}</pre>
+            </div>
+          </details>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

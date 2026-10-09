@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Er ging iets mis') }} — Otto{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card" style="text-align:center;">
+    <div style="font-size:64px; font-weight:800; color:var(--warning); letter-spacing:-.03em;">500</div>
+    <div style="font-size:18px; font-weight:700; margin:6px 0 4px;">{{ _('Er ging iets mis') }}</div>
+    <div style="font-size:14px; color:var(--text-2); margin-bottom:20px;">{{ _('Probeer het opnieuw. Blijft het misgaan, neem dan contact op met je beheerder.') }}</div>
+    {# Never dead-end the visitor: an anonymous user (e.g. mid-registration) can't reach the
+       inbox, so send them somewhere that always works for their state. #}
+    {% if current_user.is_authenticated %}
+      <a class="btn btn-primary" href="{{ url_for('web.inbox') }}">{{ _('Terug naar je postvak') }}</a>
+    {% else %}
+      <a class="btn btn-primary" href="{{ url_for('auth.login') }}">{{ _('Aanmelden') }}</a>
+    {% endif %}
+    {# The correlation id ties this screen to its row in the owner Logboek, so a user
+       can quote one short code instead of describing what they were doing. #}
+    {% if request_id %}
+      <div style="margin-top:18px; font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--text-2);">
+        {{ _('Foutcode') }}: {{ request_id }}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Otto leert je mailbox kennen…') }} — Otto{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="logo-badge"><div class="core"></div></div>
+      <div class="name">Otto</div>
+    </div>
+    <div class="auth-box">
+      <div class="scan-ring"></div>
+      <div style="font-size:20px; font-weight:700; letter-spacing:-.01em; margin-bottom:6px;">{{ _('Otto leert je mailbox kennen…') }}</div>
+      <div style="font-size:14px; color:var(--text-2); line-height:1.55; margin-bottom:22px;">{{ _('We scannen je ~300 recentste mails om je schrijfstijl, toon en sorteervoorkeuren te leren. Niets wordt verzonden.') }}</div>
+      <div class="scan-bar"><div id="scan-fill" style="width:0%;"></div></div>
+      <div id="scan-label" style="margin-top:10px; font-size:13px; color:var(--muted); font-weight:600;">{{ _('Mailbox verbinden…') }}</div>
+    </div>
+  </div>
+</div>
+
+<form id="complete-form" method="post" action="{{ url_for('auth.onboarding_complete') }}" style="display:none;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/onboarding.js') }}"></script>
+{% endblock %}

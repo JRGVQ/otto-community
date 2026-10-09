@@ -1,0 +1,19 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}Profiel & instellingen{% endblock %}
+{% block doc %}
+<h1>{{ _('Profiel & instellingen') }}</h1>
+<div class="sub">{{ _('Stel in hoe Otto namens jou antwoordt — die regels gelden bij elk concept.') }}</div>
+
+<h2>{{ _('Antwoord-instructies') }}</h2>
+<p>{{ _('Onder') }} <strong>{{ _('Instellingen → Antwoordvoorkeuren') }}</strong> {{ _('beschrijf je in gewone taal hoe Otto moet schrijven. Bijvoorbeeld:') }}</p>
+<blockquote>{{ _('"Geen ‘bedankt voor je bericht’ of ‘ik hoop dat alles goed gaat’ — antwoord altijd duidelijk en to the point."') }}</blockquote>
+<p>{{ _('Otto past dit toe op elk concept dat hij klaarzet.') }}</p>
+
+<h2>{{ _('Handtekening & toon') }}</h2>
+<p>{{ _('Stel je vaste') }} <strong>{{ _('handtekening') }}</strong> {{ _('in (komt onderaan je concepten) en je standaard') }} <strong>{{ _('toon') }}</strong> {{ _('(neutraal, formeel, kort of vriendelijk).') }}</p>
+
+<h2>{{ _('Functies aan/uit') }}</h2>
+<p>{{ _('Zet per functie aan of uit wat Otto voor je doet. Otto leert daarnaast je stijl uit je verzonden mail.') }}</p>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('handtekeningen') }}">{{ _('Volgende: Handtekeningen') }} →</a></p>
+{% endblock %}

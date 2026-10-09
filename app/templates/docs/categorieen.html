@@ -1,0 +1,20 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Categorieën') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Categorieën') }}</h1>
+<div class="sub">{{ _('Bepaal zelf hoe Otto je mail ordent — met genummerde categorieën en subcategorieën.') }}</div>
+
+<h2>{{ _('De standaardindeling') }}</h2>
+<p>{{ _('Otto start met zeven genummerde categorieën, elk met subcategorieën:') }} <strong>{{ _('1 Te beantwoorden') }}</strong>, <strong>{{ _('2 Ter info (FYI)') }}</strong>, <strong>{{ _('3 Vergaderingen') }}</strong>, <strong>{{ _('4 Financieel') }}</strong>, <strong>{{ _('5 Nieuwsbrief / Marketing') }}</strong>, <strong>{{ _('6 Meldingen') }}</strong> {{ _('en') }} <strong>{{ _('7 Spam') }}</strong>. {{ _('De nummers maken ordenen overzichtelijk.') }}</p>
+
+<h2>{{ _('Zelf aanpassen') }}</h2>
+<ol class="steps-num">
+  <li>{{ _('Ga naar') }} <strong>{{ _('Categorieën') }}</strong> {{ _('in de zijbalk.') }}</li>
+  <li>{{ _('Klik') }} <strong>{{ _('Bewerken') }}</strong> {{ _('bij een categorie, of') }} <strong>{{ _('+ Nieuwe categorie') }}</strong>.</li>
+  <li>{{ _('Geef een naam, kleur en een') }} <strong>{{ _('AI-instructie in gewone taal') }}</strong> {{ _('(bv. "mails van bestaande klanten — antwoord vriendelijk en met een volgende stap").') }}</li>
+  <li>{{ _('Zet') }} <em>{{ _('Maakt concepten') }}</em> {{ _('aan als Otto voor deze categorie een antwoord mag klaarzetten.') }}</li>
+</ol>
+<div class="note">{{ _('Otto leert mee: corrigeer je een categorie, dan houdt hij daar rekening mee.') }}</div>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('concepten') }}">{{ _('Volgende: Concepten & antwoorden') }} →</a></p>
+{% endblock %}

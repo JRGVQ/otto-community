@@ -1,0 +1,19 @@
+# Production dependencies = core + the integrations needed for a real deployment.
+-r requirements.txt
+
+gunicorn==23.0.0
+psycopg[binary]==3.2.3        # PostgreSQL driver (postgresql+psycopg://)
+celery[redis]==5.4.0          # background workers
+redis==5.2.1
+sentry-sdk[flask]==2.19.2     # error tracking (active only when SENTRY_DSN is set)
+msal==1.37.0                  # Microsoft 365 / Graph OAuth + token refresh (1.37 allows cryptography>=46, avoids the cryptography==48 conflict)
+# Gmail is a shared-app provider just like Microsoft 365, so its SDK belongs here too.
+# Without these, setting GOOGLE_CLIENT_ID/SECRET is not enough: is_configured() stays
+# False and the connect flow cannot even build its OAuth request.
+google-api-python-client==2.156.0   # Gmail provider (mail, labels, drafts, users.watch)
+google-auth-oauthlib==1.2.1         # the OAuth connect flow
+google-auth==2.38.0                 # token refresh + the OIDC check on Pub/Sub pushes
+anthropic==0.112.0            # Claude LLM provider (LLM_PROVIDER=anthropic + ANTHROPIC_API_KEY)
+openai==1.109.1               # OpenAI, Azure OpenAI and every OpenAI-compatible endpoint (incl. per-org keys)
+signxml==5.1.0                # SAML 2.0 login: verifies the IdP's signature (app/auth/oauth/saml.py)
+pypdf==5.1.0                  # PDF text extraction for the knowledge base (app/knowledge_base.py)

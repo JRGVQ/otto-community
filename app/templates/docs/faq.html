@@ -1,0 +1,26 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Veelgestelde vragen') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Veelgestelde vragen') }}</h1>
+<div class="sub">{{ _('Korte antwoorden op de meest gestelde vragen.') }}</div>
+
+<h3>{{ _('Verzendt Otto mails automatisch?') }}</h3>
+<p>{{ _('Nee — nooit. Otto maakt enkel concept-antwoorden. Verzenden doe jij, met één klik, nadat je het concept hebt nagelezen. Dit zit structureel in de code: de mailpijplijn heeft geen verzendfunctie.') }}</p>
+
+<h3>{{ _('Worden mijn gegevens gebruikt om AI te trainen?') }}</h3>
+<p>{{ _('Nee. De gebruikte AI-provider traint niet op je mailinhoud. Je data blijft in je eigen, afgeschermde omgeving.') }}</p>
+
+<h3>{{ _('Waar staan mijn data?') }}</h3>
+<p>{{ _('Elke organisatie heeft een volledig afgeschermde omgeving (eigen database/rijen). Bedrijven delen nooit data met elkaar.') }}</p>
+
+<h3>{{ _('Welke mailproviders worden ondersteund?') }}</h3>
+<p>{{ _('Microsoft 365 (Graph) en Gmail via OAuth. Je kan ook je') }} <a href="{{ docs_url('eigen-app') }}">{{ _('eigen app') }}</a> {{ _('gebruiken zodat de toestemming in je eigen tenant blijft.') }}</p>
+
+<h3>{{ _('Kan ik mijn schrijfstijl bepalen?') }}</h3>
+<p>{{ _('Ja. Otto leert je stijl uit je verzonden mail en je kan per concept de toon kiezen (neutraal, formeel, kort, vriendelijk).') }}</p>
+
+<h3>{{ _('Hoe verwijder of exporteer ik mijn gegevens (GDPR)?') }}</h3>
+<p>{{ _('Neem contact op met de beheerder; data-export en -verwijdering per organisatie zijn voorzien.') }}</p>
+
+<div class="note">{{ _('Vraag niet beantwoord? Neem contact op met de beheerder van je Otto-installatie.') }}</div>
+{% endblock %}

@@ -1,0 +1,371 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Inbox') }} — Otto{% endblock %}
+{% block screen %}
+{% if digest %}
+  {# Digest-modus: wat na het laatste vaste moment binnenkwam, wacht — met een uitweg. #}
+  <div class="alert alert-info" style="display:flex; align-items:center; gap:12px; margin:0 0 12px;">
+    <span style="flex:1;">
+      {% trans count=digest.count, tijd=digest.next %}{{ count }} nieuwe berichten wachten op je volgende overzicht om {{ tijd }}.{% endtrans %}
+    </span>
+    <a class="btn btn-secondary btn-sm" href="{{ url_for('web.inbox', alles=1) }}">{{ _('Toon nu') }}</a>
+  </div>
+{% endif %}
+<div class="inbox-cols {% if selected %}has-selection{% endif %}">
+
+  {# ── Category rail ── #}
+  <div class="cat-rail">
+    <button class="panel-expand" data-collapse="rail" aria-label="{{ _('Categorieën tonen') }}" title="{{ _('Tonen') }}">›</button>
+    <div class="rail-extra">
+      {% if team %}
+        <a href="{{ url_for('web.teams') }}" style="font-size:12px; color:var(--muted); text-decoration:none;">{{ _('← Teams') }}</a>
+        {% if team.siblings and team.siblings|length > 1 %}
+          <select class="input" data-team-switch style="margin:6px 0 8px; height:36px; font-weight:700;">
+            {% for sib in team.siblings %}
+              <option value="{{ sib.id }}" {{ 'selected' if sib.id == team.id }}>{{ sib.name }}</option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <div style="font-size:15px; font-weight:800; letter-spacing:-.01em; margin:6px 0 8px;">{{ team.name }}</div>
+        {% endif %}
+        <a href="{{ url_for('web.team_settings', account_id=team.id) }}" class="btn btn-secondary btn-sm" style="display:block; text-align:center;">{{ _('Instellingen') }}</a>
+      {% elif show_viewswitch %}
+        {% include "app/user/_inbox_viewswitch.html" %}
+      {% endif %}
+    </div>
+    <div class="rail-head">
+      <span>{{ _('Categorieën') }}</span>
+      <button class="col-toggle" data-collapse="rail" aria-label="{{ _('Categorieën inklappen') }}" title="{{ _('Inklappen') }}">‹</button>
+    </div>
+    <div class="rail-list">
+      {% for c in rail %}
+        <a class="rail-item {{ 'active' if c.active }}" href="{{ url_for(inbox_endpoint, cat=c.key, **link_query) }}">
+          <span class="dot-r" style="background:{{ c.color }};"></span>
+          <span class="nm">{% if not loop.first %}<span style="color:var(--muted-3); font-variant-numeric:tabular-nums;">{{ loop.index0 }}.</span> {% endif %}{{ c.name }}</span>
+          <span class="ct">{{ c.count }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-resizer" data-resize="rail"></div>
+
+  {# ── Message list ── #}
+  <div class="msg-list">
+    <button class="panel-expand" data-collapse="list" aria-label="{{ _('Berichtenlijst tonen') }}" title="{{ _('Tonen') }}">›</button>
+    <div class="msg-list-head" style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+      <div>
+        <div class="t">{{ list_title }}</div>
+        <div class="s">
+          {{ list_subtitle }}
+          {# Sorteren hoort bij de telling, niet bij de filters: filters bepalen wát je
+             ziet, de volgorde bepaalt hoe het ligt. Met twee opties is een keuzelijst
+             overdreven — één klik draait de volgorde om. #}
+          <a class="sort-toggle" href="{{ url_for(inbox_endpoint, cat=filter_key, **sort_toggle_query) }}"
+             title="{{ _('Oudste eerst') if sort != 'old' else _('Nieuwste eerst') }}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M7 4v16M7 20l-3-3M7 20l3-3"/><path d="M17 20V4M17 4l-3 3M17 4l3 3"/>
+            </svg>
+            {{ _('Nieuwste eerst') if sort != 'old' else _('Oudste eerst') }}
+          </a>
+        </div>
+        {% if unsub_count and unsub_count > 0 %}
+          <button class="btn btn-ghost btn-sm" data-action="unsubscribe-all"
+                  data-cat="{{ filter_key }}" data-account-id="{{ inbox_args.get('account_id', '') }}"
+                  data-count="{{ unsub_count }}" style="margin-top:6px;"
+                  title="{{ _('Schrijf in één keer uit bij alle afzenders in deze weergave die dat automatisch ondersteunen') }}">
+            ✕ {{ _('Alles uitschrijven') }} ({{ unsub_count }})
+          </button>
+        {% endif %}
+      </div>
+      <button class="col-toggle" data-collapse="list" aria-label="{{ _('Berichtenlijst inklappen') }}" title="{{ _('Inklappen') }}" style="margin-top:2px;">‹</button>
+    </div>
+
+    {# ── Zoeken & filteren ──────────────────────────────────────────────────
+       Zoeken krijgt een eigen regel: het is de meestgebruikte bediening en heeft de
+       volle breedte nodig. De filters staan daaronder als schakelbare chips op één
+       rij die zijwaarts schuift, in plaats van te wikkelen tot een rafelig blok. #}
+    <form class="msg-filter" method="get" action="{{ url_for(inbox_endpoint, **inbox_args) }}">
+      <input type="hidden" name="cat" value="{{ filter_key }}">
+      {# Sorteren staat in de kop; als verborgen veld blijft de keuze staan bij filteren. #}
+      {% if sort == 'old' %}<input type="hidden" name="sort" value="old">{% endif %}
+
+      <div class="msg-search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+        </svg>
+        <input type="search" name="q" value="{{ search }}" aria-label="{{ _('Zoeken') }}"
+               placeholder="{{ _('Zoek op afzender of onderwerp…') }}">
+        {% if search %}
+          <a class="msg-search-clear" title="{{ _('Zoekopdracht wissen') }}"
+             aria-label="{{ _('Zoekopdracht wissen') }}"
+             href="{{ url_for(inbox_endpoint, cat=filter_key, **dict(link_query, q=None)) }}">✕</a>
+        {% endif %}
+      </div>
+
+      {% macro filterchip(name, active, label) %}
+        {# De checkbox blijft in de DOM (zo verzendt het formulier zichzelf zonder JS-URL-
+           bouwwerk), maar is visueel weg: de chip zelf is de aan/uit-staat. #}
+        <label class="chip {{ 'on' if active }}">
+          <input type="checkbox" name="{{ name }}" value="1" {{ 'checked' if active }} data-submit-on-change>
+          <span>{{ label }}</span>
+        </label>
+      {% endmacro %}
+      <div class="chip-row">
+        {# Wissen staat vooraan: achteraan zou het uit beeld schuiven zodra de rij
+           schuift, en dat is net wanneer er filters aanstaan om te wissen. #}
+        {% if has_filters %}
+          <a class="chip chip-clear" href="{{ url_for(inbox_endpoint, cat=filter_key, **clear_filters_query) }}"
+             title="{{ _('Alle filters wissen') }}">✕ {{ _('Wissen') }}</a>
+        {% endif %}
+        {{ filterchip('unread', unread_only, _('Ongelezen')) }}
+        {{ filterchip('draft', f_draft, _('Concept klaar')) }}
+        {{ filterchip('waiting', f_waiting, _('Wacht op antwoord')) }}
+        {{ filterchip('mine', f_mine, _('Aan mij')) }}
+      </div>
+    </form>
+
+    {% if messages %}{% for m in messages %}
+      {% set cat = m.category %}
+      <a class="msg-row {{ 'active' if selected and selected.id == m.id }} {{ 'unread' if m.unread }}"
+         href="{{ url_for(inbox_endpoint, cat=filter_key, m=m.id, **link_query) }}">
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <div class="avatar avatar-38" style="background:{{ m.avatar_color }};">{{ m.initials }}</div>
+          <div class="min0" style="flex:1;">
+            <div style="display:flex; align-items:baseline; gap:8px;">
+              <span class="sender nowrap" style="flex:1;">{{ m.sender }}</span>
+              {% if thread_counts.get(m.id) %}<span class="thread-count" title="{% trans count=thread_counts[m.id] %}{{ count }} berichten in dit gesprek{% endtrans %}">💬 {{ thread_counts[m.id] }}</span>{% endif %}
+              <span class="time">{{ (m.received_at or m.created_at)|reltime(m.time_display) }}</span>
+            </div>
+            <div class="subj nowrap">{{ m.subject }}</div>
+            <div class="snip clamp1">{{ m.snippet }}</div>
+            <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
+              {% if cat %}<span class="tag" style="color:{{ cat.color }}; background:{{ cat.color|alpha }};">{{ cat.name }}</span>{% endif %}
+              {% if m.account and m.account.is_shared and not team %}<span class="pill" style="color:#5B5FC7; background:var(--purple-100);">{{ m.account.target_address }}</span>{% endif %}
+              {% if m.has_concept_draft %}<span class="pill pill-concept">{{ _('Concept klaar') }}</span>{% endif %}
+              {% if m.assignee %}<span class="pill" style="font-size:10px; color:#5B5FC7; background:var(--purple-100);">→ {{ m.assignee.name.split()[0] }}</span>{% endif %}
+              {% if m.state == 'in_progress' %}<span class="pill" style="font-size:10px; color:#B8730A; background:#F2994A22;">{{ _('In behandeling') }}</span>{% elif m.state == 'done' %}<span class="pill" style="font-size:10px; color:#1E7E45; background:#27AE6022;">{{ _('Afgehandeld') }}</span>{% endif %}
+            </div>
+          </div>
+          {% if m.unread %}<div class="unread-dot"></div>{% endif %}
+        </div>
+      </a>
+    {% endfor %}{% else %}
+      <div class="empty-state" style="padding:46px 22px; text-align:center;">
+        <div class="glyph"><div class="core"></div></div>
+        {% if has_filters %}
+          <div style="font-size:15px; font-weight:700; color:var(--muted); margin-top:10px;">{{ _('Geen berichten gevonden') }}</div>
+          <div style="font-size:13px; color:var(--muted); margin-top:4px;">{{ _('Geen mail komt overeen met je zoekopdracht of filter.') }}</div>
+          <a class="btn btn-secondary btn-sm" style="margin-top:14px;" href="{{ url_for(inbox_endpoint, cat=filter_key, **inbox_args) }}">{{ _('Filters wissen') }}</a>
+        {% elif me and me.mail_accounts %}
+          <div style="font-size:15px; font-weight:700; color:var(--muted); margin-top:10px;">{{ _('Niets in deze weergave') }}</div>
+          <div style="font-size:13px; color:var(--muted); margin-top:4px;">{{ _('Otto sorteert nieuwe mail hier automatisch zodra ze binnenkomt.') }}</div>
+        {% else %}
+          <div style="font-size:15px; font-weight:700; color:var(--muted); margin-top:10px;">{{ _('Je inbox is nog leeg') }}</div>
+          <div style="font-size:13px; color:var(--muted); margin-top:4px; line-height:1.5;">{{ _('Koppel je mailbox, dan sorteert Otto je mail hier') }}<br>{{ _('automatisch en zet hij concept-antwoorden klaar.') }}</div>
+          <a class="btn btn-primary btn-sm" style="margin-top:14px;" href="{{ url_for('web.integrations') }}">{{ _('Koppel je mailbox →') }}</a>
+        {% endif %}
+      </div>
+    {% endif %}
+    <div style="height:24px;"></div>
+  </div>
+
+  <div class="col-resizer" data-resize="list"></div>
+
+  {# ── Reading pane ── #}
+  <div class="reading">
+    {% if selected %}
+      {% set cat = selected.category %}
+      <div class="reading-inner fade">
+        <a class="mobile-back" href="{{ url_for(inbox_endpoint, cat=filter_key, **inbox_args) }}">{{ _('← Terug naar berichten') }}</a>
+        <div class="mail-head">
+          {% if cat %}<span class="tag-lg tag" style="color:{{ cat.color }}; background:{{ cat.color|alpha }};">{{ cat.name }}</span>{% endif %}
+          {% if selected_is_shared and selected.account %}<span class="pill" style="color:#5B5FC7; background:var(--purple-100);">{{ selected.account.target_address }}</span>{% endif %}
+          <span style="font-size:12.5px; color:var(--muted);">{{ _('Otto plaatste dit hier') }} ·</span>
+          <span style="font-size:12.5px; color:var(--accent); font-weight:700;">{{ _('verplaats:') }}</span>
+          {% for o in move_options %}
+            <span class="move-chip" data-action="recategorize" data-id="{{ selected.id }}" data-cat="{{ o.key }}" style="color:{{ o.color }};">{{ o.name }}</span>
+          {% endfor %}
+        </div>
+
+        {% if team %}
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px; padding:10px 12px; background:var(--bg); border-radius:11px;">
+          <span style="font-size:12px; color:var(--muted); font-weight:600;">{{ _('Toegewezen') }}</span>
+          <select class="role-select" data-action="assign-msg" data-id="{{ selected.id }}">
+            <option value="0">{{ _('Niemand') }}</option>
+            {% for a in assignees %}<option value="{{ a.id }}" {{ 'selected' if selected.assignee_user_id == a.id }}>{{ a.name }}</option>{% endfor %}
+          </select>
+          <span style="flex:none; width:1px; height:20px; background:var(--border); margin:0 4px;"></span>
+          <span style="font-size:12px; color:var(--muted); font-weight:600;">{{ _('Status') }}</span>
+          {% for key, lbl in [('open', _('Open')),('in_progress', _('In behandeling')),('done', _('Afgehandeld'))] %}
+            <button class="move-chip" data-action="set-state" data-id="{{ selected.id }}" data-state="{{ key }}"
+                    style="{% if (selected.state or 'open') == key %}background:var(--purple-150); color:var(--accent); border-color:var(--accent);{% endif %}">{{ lbl }}</button>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="mail-subject">{{ selected.subject }}
+          {% if selected_thread|length > 1 %}<span style="font-size:12.5px; font-weight:600; color:var(--muted);">· {% trans count=selected_thread|length %}{{ count }} berichten{% endtrans %}</span>{% endif %}
+        </div>
+
+        {# Full conversation, oldest first. Earlier messages are collapsed; the latest is open. #}
+        {% for tm in selected_thread %}
+          {% set is_last = loop.last %}
+          <div class="mail-card thread-msg {{ 'thread-collapsed' if not is_last and selected_thread|length > 1 }}"
+               {% if not is_last %}data-thread-toggle{% endif %}>
+            <div style="display:flex; align-items:center; gap:12px; {{ 'margin-bottom:16px;' if is_last or selected_thread|length == 1 }}">
+              <div class="avatar avatar-42" style="background:{{ tm.avatar_color }};">{{ tm.initials }}</div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-weight:700; font-size:14.5px;">{{ tm.sender }}</div>
+                <div style="font-size:12.5px; color:var(--muted);">{{ tm.sender_email }}</div>
+              </div>
+              <div style="font-size:12.5px; color:var(--muted-2);">{{ (tm.received_at or tm.created_at)|fulltime(tm.time_display) }}</div>
+            </div>
+            {# Rijke HTML-weergave in een ge-sandboxte iframe (geen scripts); mail zonder
+               HTML — of zonder nh3-sanitizer — valt terug op de vertrouwde tekstweergave. #}
+            {% if thread_html and thread_html.get(tm.id) %}
+              <iframe class="mail-html" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                      loading="lazy" title="{{ _('Berichtinhoud') }}" srcdoc="{{ thread_html.get(tm.id) }}"></iframe>
+            {% else %}
+              <div class="mail-body thread-body">{{ tm.body|mailtext }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+
+        <div class="action-row">
+          <button class="btn btn-secondary" data-action="task" data-id="{{ selected.id }}" data-subject="{{ selected.subject }}">{{ _('+ Taak aanmaken') }}</button>
+          <button class="btn btn-ghost" data-action="archive" data-id="{{ selected.id }}">{{ _('Archiveren') }}</button>
+          {% if selected.has_unsubscribe %}
+            {% if selected.unsubscribed_at %}
+              <span class="pill" style="color:var(--success-text); background:var(--success-bg, var(--purple-100));">✓ {{ _('Uitgeschreven') }}</span>
+            {% else %}
+              <button class="btn btn-ghost" data-action="unsubscribe" data-id="{{ selected.id }}" title="{{ _('Uitschrijven bij deze afzender') }}">✕ {{ _('Uitschrijven') }}</button>
+            {% endif %}
+          {% endif %}
+        </div>
+
+        {% if folders %}
+        <form class="action-row" method="post" action="{{ url_for('web.move_message', message_id=selected.id) }}" style="margin-top:8px; align-items:center; gap:8px; flex-wrap:wrap;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <span style="font-size:12.5px; color:var(--muted);">📁 {{ _('Verplaats naar map:') }}</span>
+          <select name="folder_id" class="input" style="height:34px; width:auto; padding:0 10px; flex:none;">
+            {% for f in folders %}<option value="{{ f.id }}" {{ 'selected' if suggested_folder and suggested_folder.id == f.id }}>{{ f.name }}</option>{% endfor %}
+          </select>
+          <button class="btn btn-secondary" type="submit">{{ _('Verplaats') }}</button>
+          {% if suggested_folder %}<span style="font-size:12px; color:var(--accent); font-weight:600;">{% trans name=suggested_folder.name %}Otto stelt “{{ name }}” voor{% endtrans %}</span>{% endif %}
+        </form>
+        {% endif %}
+
+        {% if selected.draft %}
+          {% set d = selected.draft %}
+          <div class="draft-panel"
+               data-message-id="{{ selected.id }}"
+               {% for v in d.tone_variants %}data-v-{{ v.tone }}="{{ v.text }}"{% endfor %}>
+            <div class="draft-head">
+              <div class="icon"><div class="core"></div></div>
+              <div style="flex:1;">
+                <div class="t">{{ _('Concept-antwoord van Otto') }}</div>
+                <div class="s">{{ _('In jouw stijl') }} · {{ selected.lang }}</div>
+              </div>
+              {% if d.placed and d.status == 'concept' %}
+                <span class="pill pill-outlook">✓ {{ _('Klaargezet in Outlook') }}</span>
+              {% endif %}
+            </div>
+
+            {% if d.status == 'concept' %}
+              <div class="draft-body">
+                <div style="display:flex; gap:7px; margin-bottom:13px; flex-wrap:wrap; align-items:center;">
+                  <span style="font-size:11.5px; color:var(--muted); font-weight:700; margin-right:2px;">{{ _('Toon:') }}</span>
+                  {% for t in tones %}
+                    <button class="tone {{ 'active' if d.current_tone == t.key }}" data-action="tone" data-id="{{ selected.id }}" data-tone="{{ t.key }}">{{ t.label }}</button>
+                  {% endfor %}
+                </div>
+                <textarea class="textarea" id="draft-text" data-action="edit" data-id="{{ selected.id }}" style="min-height:178px;">{{ d.current_text }}</textarea>
+                {# Snippets: vaste tekstblokken van het team, ingevoegd op de cursorpositie. #}
+                <div id="snippet-bar" data-snippets data-message-id="{{ selected.id }}"
+                     style="display:none; gap:7px; margin-top:9px; flex-wrap:wrap; align-items:center;">
+                  <span style="font-size:11.5px; color:var(--muted); font-weight:700;">{{ _('Blokken:') }}</span>
+                </div>
+                <div class="draft-guide">
+                  <input class="input" id="draft-intent" type="text"
+                         placeholder="{{ _('Wat wil je antwoorden? Bv. ‘bevestig de afspraak op dinsdag 10u’ (optioneel)') }}"
+                         style="flex:1; min-width:0;">
+                  <button class="btn btn-secondary" style="height:38px; white-space:nowrap;" data-action="regenerate" data-id="{{ selected.id }}">{{ _('Pas concept aan') }}</button>
+                </div>
+                {% if draft_signature_name %}
+                  <div style="font-size:12px; color:var(--muted); margin-top:8px;">
+                    ✒️ {% trans name=draft_signature_name %}Handtekening “{{ name }}” wordt automatisch onder het concept gezet.{% endtrans %}
+                  </div>
+                {% endif %}
+                <div class="draft-actions">
+                  <button class="btn btn-primary btn-send" data-action="send" data-id="{{ selected.id }}">{{ _('Verzenden →') }}</button>
+                  <button class="btn btn-secondary" style="height:42px;" data-action="regenerate" data-id="{{ selected.id }}" data-plain="1">↻ {{ _('Opnieuw genereren') }}</button>
+                  <button class="btn-discard" data-action="discard" data-id="{{ selected.id }}">{{ _('Verwerpen') }}</button>
+                  <span class="spacer"></span>
+                  <span class="draft-note">{{ _('Jij verzendt — Otto nooit automatisch') }}</span>
+                </div>
+              </div>
+            {% elif d.status == 'verzonden' %}
+              <div class="draft-sent">
+                <div class="ring">✓</div>
+                <div style="font-size:15px; font-weight:800; color:var(--success-text);">{{ _('Verzonden door jou') }}</div>
+                <div style="font-size:12.5px; color:var(--muted); margin-top:3px;">{{ _('Otto heeft je antwoord in de juiste thread geplaatst.') }}</div>
+              </div>
+            {% else %}
+              <div style="padding:22px 20px; text-align:center;">
+                <div style="font-size:14px; font-weight:700; color:var(--muted); margin-bottom:12px;">{{ _('Concept verworpen') }}</div>
+                <button class="btn btn-secondary" style="height:38px;" data-action="regenerate" data-id="{{ selected.id }}">↻ {{ _('Nieuw concept genereren') }}</button>
+              </div>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="no-draft" style="flex-direction:column; align-items:stretch; gap:10px;">
+            <div style="font-size:13px; color:var(--muted); line-height:1.5;">{{ _('Voor deze categorie maakt Otto geen concept. Zeg wat je wil antwoorden, dan stelt Otto het op (met de context van de conversatie).') }}</div>
+            <input class="input" id="compose-intent" type="text"
+                   placeholder="{{ _('Bv. ‘bevestig dat we geïnteresseerd zijn en vraag een afspraak volgende week’') }}">
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary" style="height:38px;" data-action="force" data-id="{{ selected.id }}" data-compose="1">{{ _('Concept opstellen') }}</button>
+              <button class="btn btn-secondary" style="height:38px;" data-action="force" data-id="{{ selected.id }}" data-blank="1">{{ _('Leeg concept') }}</button>
+            </div>
+          </div>
+        {% endif %}
+
+        {# ── Interne notities — teamoverleg over deze mail, nooit verzonden ── #}
+        <div class="draft-panel" style="margin-top:16px;" data-note-add>
+          <div class="draft-head">
+            <div class="icon" style="background:#5B5FC7;"><div class="core"></div></div>
+            <div style="flex:1;">
+              <div class="t">{{ _('Interne notities') }}{% if selected_is_shared %} · {{ _('teamoverleg') }}{% endif %}</div>
+              <div class="s">{{ _('Alleen voor het team — nooit zichtbaar voor de afzender') }}</div>
+            </div>
+          </div>
+          <div class="draft-body">
+            <div id="note-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+              {% for n in selected_notes %}
+                <div class="note-item" style="border:1px solid var(--border); border-radius:10px; padding:9px 12px;">
+                  <div style="font-size:11.5px; color:var(--muted); font-weight:700;">{{ n.author }} · {{ n.when }}</div>
+                  <div style="font-size:13px; white-space:pre-wrap;">{{ n.body }}</div>
+                </div>
+              {% endfor %}
+              {% if not selected_notes %}
+                <div id="note-empty" style="font-size:12.5px; color:var(--muted);">{{ _("Nog geen notities. Laat een interne notitie achter voor je collega's.") }}</div>
+              {% endif %}
+            </div>
+            <div style="display:flex; gap:8px; align-items:flex-end;">
+              <textarea class="textarea" placeholder="{{ _('Interne notitie voor het team…') }}" style="min-height:60px; flex:1;"></textarea>
+              <button class="btn btn-secondary" style="height:42px;" data-action="add-note" data-id="{{ selected.id }}">{{ _('Notitie') }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="glyph"><div class="core"></div></div>
+        <div style="font-size:15px; font-weight:700; color:var(--muted);">{{ _('Selecteer een mail') }}</div>
+        <div style="font-size:13px; margin-top:3px;">{{ _('Kies links een bericht om het te lezen en te beantwoorden.') }}</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ _('Rondleiding') }} — Otto{% endblock %}
+{% block screen %}
+<style>
+  .tour-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
+  .tour-card{display:block; padding:16px 18px; border:1px solid var(--border); border-radius:14px; background:var(--bg); transition:border-color .12s, transform .12s;}
+  .tour-card:hover{border-color:var(--accent); transform:translateY(-1px);}
+  .tour-card .t{font-weight:800; font-size:14.5px; margin:8px 0 3px; display:flex; align-items:center; gap:8px;}
+  .tour-card .d{font-size:12.5px; color:var(--text-2); line-height:1.5;}
+  .tour-dot{width:10px; height:10px; border-radius:3px; display:inline-block;}
+  .tour-sec{font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin:22px 0 10px;}
+</style>
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:900px;">
+    <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ _('Welkom in Otto — waar vind je alles') }}</div>
+    <div class="page-sub">{{ _('Een snelle rondleiding door je omgeving. Je vindt deze pagina later altijd terug via ‘Rondleiding’ in de zijbalk.') }}</div>
+
+    {% if not has_mailbox %}
+    <div class="card" style="padding:16px 18px; margin:14px 0 4px; display:flex; align-items:center; gap:14px; border:1px solid var(--accent);">
+      <span style="font-size:22px;">📬</span>
+      <div style="flex:1;">
+        <div style="font-weight:800; font-size:14.5px;">{{ _('Koppel je mailbox') }}</div>
+        <div style="font-size:12.5px; color:var(--text-2);">{{ _('Otto begint pas te sorteren zodra je een mailbox koppelt. Dat regel je bij Integraties.') }}</div>
+      </div>
+      <a class="btn btn-primary" style="height:40px;" href="{{ url_for('web.integrations') }}">{{ _('Koppelen') }} →</a>
+    </div>
+    {% endif %}
+
+    {% if capabilities.llm_stub %}
+    <div class="tour-sec">{{ _('Jouw eigen AI-sleutel') }}</div>
+    <div class="tour-grid">
+      <a class="tour-card" href="{{ url_for('web.admin_screen', screen='ai') }}">
+        <span class="tour-dot" style="background:#9B51E0;"></span>
+        <div class="t">🔑 {{ _('AI-sleutel & model') }}</div>
+        <div class="d">{{ _('Jouw eigen AI-provider en model. Hier wissel je van sleutel, provider of model.') }}</div>
+      </a>
+      <a class="tour-card" href="{{ url_for('web.connector_settings') }}">
+        <span class="tour-dot" style="background:#0078D4;"></span>
+        <div class="t">🔌 {{ _('Eigen mailbox-app') }}</div>
+        <div class="d">{{ _('Je eigen Microsoft/Google-app zodat de toestemming binnen jouw tenant blijft.') }}</div>
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="tour-sec">{{ _('Werk') }}</div>
+    <div class="tour-grid">
+      <a class="tour-card" href="{{ url_for('web.inbox') }}">
+        <span class="tour-dot" style="background:#6C4CE6;"></span>
+        <div class="t">📥 {{ _('Inbox') }}</div>
+        <div class="d">{{ _('Je post, automatisch gesorteerd in categorieën, met klaarstaande concept-antwoorden.') }}</div>
+      </a>
+      <a class="tour-card" href="{{ url_for('web.briefing') }}">
+        <span class="tour-dot" style="background:#F2994A;"></span>
+        <div class="t">📊 {{ _('Dagelijkse briefing') }}</div>
+        <div class="d">{{ _('Een dagelijks overzicht van wat aandacht vraagt.') }}</div>
+      </a>
+      <a class="tour-card" href="{{ url_for('web.tasks') }}">
+        <span class="tour-dot" style="background:#2D9CDB;"></span>
+        <div class="t">✅ {{ _('Taken') }}</div>
+        <div class="d">{{ _('Taken uit je mails, gesynct met Microsoft To Do / Planner.') }}</div>
+      </a>
+      <a class="tour-card" href="{{ url_for('web.follow_ups') }}">
+        <span class="tour-dot" style="background:#EB5757;"></span>
+        <div class="t">🔁 {{ _('Opvolgingen') }}</div>
+        <div class="d">{{ _('Otto stelt opvolgmails voor bij onbeantwoorde berichten.') }}</div>
+      </a>
+      <a class="tour-card" href="{{ url_for('web.teams') }}">
+        <span class="tour-dot" style="background:#5B5FC7;"></span>
+        <div class="t">👥 {{ _('Teams') }}</div>
+        <div class="d">{{ _('Gedeelde postvakken beheren met je collega’s.') }}</div>
+      </a>
+    </div>
+
+    <div class="tour-sec">{{ _('Instellen') }}</div>
+    <div class="tour-grid">
+      <a class="tour-card" href="{{ url_for('web.categories') }}">
+        <span class="tour-dot" style="background:#27AE60;"></span>
+        <div class="t">🏷️ {{ _('Categorieën') }}</div>
+        <div class="d">{{ _('Bepaal hoe Otto je mail sorteert en waar hij concepten voor maakt.') }}</div>
+      </a>
+      <a class="tour-card" href="{{ url_for('web.integrations') }}">
+        <span class="tour-dot" style="background:#9B51E0;"></span>
+        <div class="t">🔗 {{ _('Integraties') }}</div>
+        <div class="d">{{ _('Mailbox koppelen en integraties (Teams, To Do, Planner) beheren.') }}</div>
+      </a>
+      <a class="tour-card" href="{{ url_for('web.settings') }}">
+        <span class="tour-dot" style="background:#9AA4B2;"></span>
+        <div class="t">⚙️ {{ _('Instellingen') }}</div>
+        <div class="d">{{ _('Je persoonlijke voorkeuren, handtekening en synchronisatie.') }}</div>
+      </a>
+    </div>
+
+    <div class="tour-sec">{{ _('Beheer & hulp') }}</div>
+    <div class="tour-grid">
+      <a class="tour-card" href="{{ url_for('web.admin_screen', screen='users') }}">
+        <span class="tour-dot" style="background:#2D9CDB;"></span>
+        <div class="t">👤 {{ _('Gebruikers & rollen') }}</div>
+        <div class="d">{{ _('Collega’s uitnodigen en rechten toekennen (Beheer).') }}</div>
+      </a>
+      <a class="tour-card" href="{{ url_for('web.admin_screen', screen='sso') }}">
+        <span class="tour-dot" style="background:#EB5757;"></span>
+        <div class="t">🔒 {{ _('Aanmelden & beveiliging') }}</div>
+        <div class="d">{{ _('SSO en toegestane domeinen instellen (Beheer).') }}</div>
+      </a>
+      <a class="tour-card" href="{{ url_for('docs.home') }}">
+        <span class="tour-dot" style="background:#F2994A;"></span>
+        <div class="t">📖 {{ _('Documentatie') }}</div>
+        <div class="d">{{ _('Handleidingen voor elke functie en het oplossen van problemen.') }}</div>
+      </a>
+      <a class="tour-card" href="{{ url_for('docs.home') }}" target="_blank" rel="noopener">
+        <span class="tour-dot" style="background:var(--muted);"></span>
+        <div class="t">📚 {{ _('Documentatie ↗') }}</div>
+        <div class="d">{{ _('Uitleg en handleidingen, in een nieuw tabblad.') }}</div>
+      </a>
+    </div>
+
+    <div style="margin-top:26px; display:flex; gap:10px; align-items:center;">
+      <a class="btn btn-primary" style="height:46px; font-size:15px; padding:0 22px;" href="{{ url_for('web.inbox') }}">{{ _('Naar mijn inbox') }} →</a>
+      <div class="principle" style="margin:0; flex:1;">
+        <div class="dot" style="background:var(--accent); margin-top:6px;"></div>
+        <div style="font-size:12.5px; color:var(--text-2); line-height:1.5;"><strong style="color:var(--heading-dark);">{{ _('Otto verzendt nooit zelf.') }}</strong> {{ _('Hij maakt enkel concepten — jij houdt de controle.') }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

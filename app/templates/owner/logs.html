@@ -1,0 +1,88 @@
+{% extends "owner/layout.html" %}
+{% block title %}{{ _('Platform — Logboek') }}{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:1100px;">
+    <div style="display:flex; align-items:center; margin-bottom:4px;">
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em; flex:1;">{{ _('Logboek') }}</div>
+      <form method="post" action="{{ url_for('owner.logs_prune') }}" style="margin-right:8px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost btn-sm">{{ _('Nu opruimen') }}</button>
+      </form>
+      <form method="post" action="{{ url_for('owner.logs_clear') }}" data-confirm="Volledige verkeerslog wissen?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger);">{{ _('Wissen') }}</button>
+      </form>
+    </div>
+    <div class="page-sub">{% trans total=total %}Elk verzoek over alle omgevingen (methode, pad, status, duur, gebruiker). {{ total }} in totaal.{% endtrans %}</div>
+
+    <div class="card card-18" style="padding:14px 18px; margin-bottom:16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+      <form method="post" action="{{ url_for('owner.logs_retention') }}" style="display:flex; align-items:center; gap:8px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label style="font-size:13px; font-weight:700; color:var(--text-2);">{{ _('Bewaartermijn') }}</label>
+        <input type="number" name="days" min="1" max="365" value="{{ retention_days }}" class="input" style="width:84px; height:36px;">
+        <span style="font-size:13px; color:var(--muted);">{{ _('dagen') }}</span>
+        <button class="btn btn-primary btn-sm">{{ _('Opslaan') }}</button>
+      </form>
+      <div style="font-size:12px; color:var(--muted); flex:1; min-width:200px;">
+        {{ _('Geldt voor het verkeerslog én de foutenlog. Oudere regels worden dagelijks automatisch verwijderd.') }}
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+      <a class="tone {{ 'active' if not kind }}" style="padding:7px 14px; border-radius:9px;" href="{{ url_for('owner.logs', q=q_path) }}">{{ _('Alles') }}</a>
+      <a class="tone {{ 'active' if kind=='errors' }}" style="padding:7px 14px; border-radius:9px;" href="{{ url_for('owner.logs', kind='errors', q=q_path) }}">{{ _('Fouten (5xx)') }}</a>
+      <a class="tone {{ 'active' if kind=='client' }}" style="padding:7px 14px; border-radius:9px;" href="{{ url_for('owner.logs', kind='client', q=q_path) }}">{{ _('4xx') }}</a>
+      <a class="tone {{ 'active' if kind=='slow' }}" style="padding:7px 14px; border-radius:9px;" href="{{ url_for('owner.logs', kind='slow', q=q_path) }}">{{ _('Traag (≥2s)') }}</a>
+      <form method="get" action="{{ url_for('owner.logs') }}" style="margin-left:auto; display:flex; gap:6px;">
+        {% if kind %}<input type="hidden" name="kind" value="{{ kind }}">{% endif %}
+        <input type="text" name="q" value="{{ q_path }}" placeholder="{{ _('Zoek op pad…') }}" class="input" style="height:36px; width:200px;">
+        <button class="btn btn-ghost btn-sm">{{ _('Zoek') }}</button>
+      </form>
+    </div>
+
+    {% if not rows %}
+      <div class="card card-18" style="padding:40px; text-align:center; color:var(--muted);">
+        <div style="font-size:32px; margin-bottom:8px;">📋</div>
+        <div style="font-size:15px; font-weight:700; color:var(--text-2);">{{ _('Nog geen verkeer geregistreerd') }}</div>
+        <div style="font-size:13px; margin-top:3px;">{{ _('Zodra er verzoeken binnenkomen, verschijnen ze hier.') }}</div>
+      </div>
+    {% else %}
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+          <thead>
+            <tr style="text-align:left; color:var(--muted); background:var(--surface-3);">
+              <th style="padding:9px 12px; font-weight:700;">{{ _('Tijd') }}</th>
+              <th style="padding:9px 8px; font-weight:700;">{{ _('Status') }}</th>
+              <th style="padding:9px 8px; font-weight:700;">{{ _('Methode') }}</th>
+              <th style="padding:9px 8px; font-weight:700;">{{ _('Pad') }}</th>
+              <th style="padding:9px 8px; font-weight:700;">{{ _('Duur') }}</th>
+              <th style="padding:9px 8px; font-weight:700;">{{ _('Omgeving') }}</th>
+              <th style="padding:9px 12px; font-weight:700;">{{ _('Gebruiker') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              {% set sc = r.status_code or 0 %}
+              {% set col = 'var(--danger)' if sc>=500 else ('var(--warning,#F2994A)' if sc>=400 else 'var(--text-2)') %}
+              <tr style="border-top:1px solid var(--border);">
+                <td style="padding:8px 12px; color:var(--muted-2); white-space:nowrap;">{{ r.occurred_at.strftime('%d/%m %H:%M:%S') if r.occurred_at }}</td>
+                <td style="padding:8px 8px; font-weight:800; color:{{ col }};">{{ r.status_code }}</td>
+                <td style="padding:8px 8px; font-family:ui-monospace,monospace;">{{ r.method }}</td>
+                <td style="padding:8px 8px; font-family:ui-monospace,monospace; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ r.path }}{% if r.endpoint %} · {{ r.endpoint }}{% endif %}">{{ r.path }}</td>
+                <td style="padding:8px 8px; color:{{ 'var(--danger)' if (r.duration_ms or 0)>=2000 else 'var(--muted)' }};">{{ r.duration_ms }}{% if r.duration_ms is not none %} ms{% endif %}</td>
+                <td style="padding:8px 8px; color:var(--muted);">{{ r.org_name or r.site or '—' }}</td>
+                <td style="padding:8px 12px; color:var(--muted);">{{ r.user_email or '—' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:12px; color:var(--muted); margin-top:10px;">
+        {% trans count=rows|length %}Nieuwste {{ count }} regels getoond. Volledige tracebacks van fouten staan onder{% endtrans %}
+        <a href="{{ url_for('owner.debug') }}" style="color:var(--accent); font-weight:700;">{{ _('Debug & errors') }}</a>.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

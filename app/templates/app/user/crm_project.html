@@ -1,0 +1,38 @@
+{% extends "app/layout.html" %}
+{% block title %}{{ project.name }} — {{ _('Project') }} — Otto{% endblock %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:900px;">
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['toast','info','error'] %}
+      <div class="alert alert-{{ 'error' if cat=='error' else 'info' }}">{{ m }}</div>
+    {% endfor %}
+
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+      <a href="{{ url_for('web.crm_projects') }}" style="font-size:13px; color:var(--muted); text-decoration:none;">← {{ _('Projecten') }}</a>
+      <span style="width:12px; height:12px; border-radius:50%; background:{{ project.color }};"></span>
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em; flex:1;">{{ project.name }}</div>
+    </div>
+
+    {% if project_contacts %}
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin:10px 0;">
+        {% for ct in project_contacts %}<span class="pill">{{ ct.display_name }}</span>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div style="font-size:15px; font-weight:800; margin:18px 0 10px;">{{ _('Gekoppelde mail') }}</div>
+    {% for msg in linked_messages %}
+      <div class="card" style="padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:10px;">
+        <div style="flex:1; min-width:0;">
+          <a href="{{ url_for('web.inbox', m=msg.id) }}" style="font-weight:600; font-size:13.5px; text-decoration:none; color:inherit;">{{ msg.subject or _('(geen onderwerp)') }}</a>
+          <div style="font-size:12px; color:var(--muted);">{{ msg.sender or msg.sender_email }}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger);"
+                data-action="crm-project-remove-msg" data-project="{{ project.id }}" data-id="{{ msg.id }}">{{ _('Loskoppelen') }}</button>
+      </div>
+    {% else %}
+      <div class="card" style="padding:20px; color:var(--muted);">{{ _('Nog geen mail gekoppeld. Sleep mail op dit project via de Projecten-pagina.') }}</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{{ super() }}{% endblock %}

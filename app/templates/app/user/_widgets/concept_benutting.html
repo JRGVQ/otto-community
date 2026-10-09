@@ -1,0 +1,12 @@
+{# Wat er met Otto's concepten gebeurt: verzonden, nog open, of verworpen. #}
+{% if w.data.total %}
+  <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px;">
+    <div><div style="font-size:24px; font-weight:800; color:var(--success-text);">{{ w.data.verzonden }}</div><div style="font-size:12px; color:var(--muted);">{{ _('verzonden') }}</div></div>
+    <div><div style="font-size:24px; font-weight:800; color:var(--accent);">{{ w.data.concept }}</div><div style="font-size:12px; color:var(--muted);">{{ _('staan klaar') }}</div></div>
+    <div><div style="font-size:24px; font-weight:800; color:var(--muted);">{{ w.data.verworpen }}</div><div style="font-size:12px; color:var(--muted);">{{ _('verworpen') }}</div></div>
+    <div><div style="font-size:24px; font-weight:800;">{{ w.data.acceptance ~ '%' if w.data.acceptance is not none else '—' }}</div><div style="font-size:12px; color:var(--muted);">{{ _('benut') }}</div></div>
+  </div>
+  <div style="font-size:12px; color:var(--muted-3);">{{ _('"Benut" = verzonden gedeeld door afgehandeld (verzonden + verworpen). Laag? Scherp dan je stijl of de AI-instructies per categorie aan.') }}</div>
+{% else %}
+  <div style="font-size:13px; color:var(--muted);">{{ _('Nog geen concepten in deze periode.') }}</div>
+{% endif %}

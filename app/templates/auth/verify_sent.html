@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Bevestig je e-mail') }} — Otto{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <a class="auth-brand" href="{{ url_for('public.home') }}">
+      <div class="logo-badge"><div class="core"></div></div>
+      <div class="name">Otto</div>
+    </a>
+    <div class="auth-box" style="text-align:center;">
+      <div style="width:52px; height:52px; border-radius:14px; background:var(--purple-150); color:var(--accent); display:inline-flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:16px;">✉</div>
+      <div style="font-size:22px; font-weight:800; letter-spacing:-.01em; margin-bottom:6px;">
+        {% if unverified %}{{ _('Bevestig eerst je e-mail') }}{% else %}{{ _('Check je mailbox') }}{% endif %}
+      </div>
+      <div style="font-size:14px; color:var(--text-2); line-height:1.6; margin-bottom:20px;">
+        {% trans email=email %}We stuurden een bevestigingslink naar <strong>{{ email }}</strong>. Klik die om je omgeving te activeren.{% endtrans %}
+      </div>
+
+      {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['info','error'] %}
+        <div class="alert alert-{{ 'error' if cat=='error' else 'info' }}" style="text-align:left; word-break:break-all;">{{ m }}</div>
+      {% endfor %}
+
+      <form method="post" action="{{ url_for('auth.resend') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="email" value="{{ email }}">
+        <button type="submit" class="btn btn-secondary" style="width:100%; height:44px;">{{ _('Stuur de link opnieuw') }}</button>
+      </form>
+    </div>
+    <div style="text-align:center; font-size:13.5px; color:var(--text-2); margin-top:18px;">
+      {{ _('Verkeerd adres?') }} <a href="{{ url_for('auth.register') }}" style="color:var(--accent); font-weight:700;">{{ _('Opnieuw registreren') }}</a>
+      · <a href="{{ url_for('auth.login') }}" style="color:var(--accent); font-weight:700;">{{ _('Aanmelden') }}</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

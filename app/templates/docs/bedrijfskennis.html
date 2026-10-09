@@ -1,0 +1,30 @@
+{% extends "docs/layout.html" %}
+{% block doc_title %}{{ _('Bedrijfskennis') }}{% endblock %}
+{% block doc %}
+<h1>{{ _('Bedrijfskennis') }}</h1>
+<div class="sub">{{ _('Otto kent je schrijfstijl vanaf dag één. Wat hij niet vanzelf kent, is je bedrijf. Hier vertel je hem wat hij moet weten om een concept ook inhoudelijk te laten kloppen.') }}</div>
+
+<h2>{{ _('Waarom het uitmaakt') }}</h2>
+<p>{{ _('Zonder kennis schrijft Otto een antwoord dat klinkt als jij, maar dat over de inhoud niets durft te zeggen. Met kennis schrijft hij dat je binnen vijf werkdagen levert, dat retour binnen veertien dagen kan, en wat je uurtarief is — met een bronverwijzing erbij. Staat het antwoord nergens in je kennis, dan zegt Otto dat hij het navraagt. Hij verzint niets.') }}</p>
+
+<h2>{{ _('Een blok toevoegen') }}</h2>
+<ol class="steps-num">
+  <li>{{ _('Ga naar') }} <strong>{{ _('Beheer → Bedrijfskennis') }}</strong>.</li>
+  <li>{{ _('Geef het blok een titel die het onderwerp noemt, bijvoorbeeld') }} <em>{{ _('Leveringstermijnen') }}</em>.</li>
+  <li>{{ _('Zet de inhoud eronder in gewone zinnen — geen opmaak nodig.') }}</li>
+  <li>{{ _('Kies of het voor de hele organisatie geldt of alleen voor één gedeeld postvak.') }}</li>
+</ol>
+<div class="note">{{ _('Eén onderwerp per blok werkt het best. Otto kiest op onderwerp, dus “Leveringstermijnen” vindt hij makkelijker terug dan “Algemene info”. Aan de teller naast elk blok zie je hoe vaak het echt een concept heeft onderbouwd.') }}</div>
+
+<h2>{{ _('Een document inlezen') }}</h2>
+<p>{{ _('Heb je het al op papier staan, upload het dan: Otto haalt er de tekst uit en bewaart die als blok. Ondersteund zijn .txt, .md, .csv, .docx en .pdf, tot 2 MB. Het bestand zelf houdt Otto niet bij — alleen de tekst, en alleen die kan ooit in een concept terechtkomen.') }}</p>
+<div class="note">{{ _('Een gescande pdf bevat vaak geen uitleesbare tekst, alleen een afbeelding van de pagina. Otto zegt dat dan; plak de tekst in dat geval zelf in een blok.') }}</div>
+
+<h2>{{ _('Naast SharePoint') }}</h2>
+<p>{{ _('Werk je met Microsoft 365, dan kun je daarnaast een SharePoint-bibliotheek koppelen (Integraties → Kennisbron). Die wordt live doorzocht en je documenten blijven staan waar ze staan. Heb je beide, dan gaan je eigen blokken voor — die heb je bewust ingevuld — en vult SharePoint de resterende plaatsen aan.') }}</p>
+
+<h2>{{ _('Wie ziet wat') }}</h2>
+<p>{{ _('Een blok dat aan een gedeeld postvak hangt, gebruikt Otto alleen in dat postvak. Wat support@ weet, komt dus niet in een persoonlijk antwoord terecht — en niet in dat van sales@.') }}</p>
+
+<p style="margin-top:24px;"><a href="{{ docs_url('eigen-app') }}">{{ _('Volgende: Eigen app koppelen') }} →</a></p>
+{% endblock %}

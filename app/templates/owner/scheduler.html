@@ -1,0 +1,110 @@
+{% extends "owner/layout.html" %}
+{% block title %}Platform — {{ _('Scheduler') }}{% endblock %}
+{% block screen %}
+{% set vkind, vmsg = verdict %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:920px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ _('Scheduler & mailbox-sync') }}</div>
+      <form method="post" action="{{ url_for('owner.scheduler_sync') }}" style="margin-left:auto;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary btn-sm" type="submit">{{ _('Nu synchroniseren') }}</button>
+      </form>
+    </div>
+    <div class="page-sub">{{ _('Draait de poller? Wanneer werd elke mailbox voor het laatst opgehaald?') }}</div>
+
+    <!-- Verdict banner -->
+    {% set vcolor = {'ok':'#27AE60','warn':'#F2994A','error':'#EB5757'}[vkind] %}
+    {% set vbg = {'ok':'var(--success-bg)','warn':'var(--warning-bg, #FFF4E5)','error':'var(--danger-bg)'}[vkind] %}
+    <div class="card card-14" style="padding:16px; border-left:4px solid {{ vcolor }}; background:{{ vbg }}; margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="dot-9" style="border-radius:50%; background:{{ vcolor }};"></div>
+        <div style="font-size:14px; font-weight:700; color:{{ vcolor }};">
+          {{ {'ok':_('Alles in orde'),'warn':_('Let op'),'error':_('Probleem')}[vkind] }}
+        </div>
+      </div>
+      <div style="font-size:13px; color:var(--text); margin-top:6px;">{{ vmsg }}</div>
+      {% if vkind == 'error' and not bg_on %}
+        <div style="font-size:12px; color:var(--muted); margin-top:8px;">
+          {% trans %}Oplossing: zet <code>BACKGROUND_SYNC=1</code> (en zo nodig <code>TASK_ALWAYS_EAGER=1</code>) in de omgeving en herstart de container.{% endtrans %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Poller heartbeat -->
+    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:13px; margin-bottom:24px;">
+      <div class="card card-14" style="padding:16px;">
+        <div style="font-size:15px; font-weight:800; color:{{ '#27AE60' if poller_alive else '#EB5757' }}; margin-top:6px;">
+          {{ _('Actief') if poller_alive else _('Stil') }}
+        </div>
+        <div style="font-size:12px; color:var(--muted);">{{ _('Poller') }}</div>
+      </div>
+      <div class="card card-14" style="padding:16px;">
+        <div style="font-size:15px; font-weight:800; font-family:ui-monospace,monospace; margin-top:6px;">
+          {{ (beat_age ~ _('s geleden')) if beat_age is not none else '—' }}
+        </div>
+        <div style="font-size:12px; color:var(--muted);">{{ _('Laatste hartslag') }}</div>
+      </div>
+      <div class="card card-14" style="padding:16px;">
+        <div style="font-size:23px; font-weight:800; color:#2D9CDB;">{{ connected }}</div>
+        <div style="font-size:12px; color:var(--muted);">{{ _('Verbonden') }}</div>
+      </div>
+      <div class="card card-14" style="padding:16px;">
+        <div style="font-size:23px; font-weight:800; color:{{ '#EB5757' if errored else '#27AE60' }};">{{ errored }}</div>
+        <div style="font-size:12px; color:var(--muted);">{{ _('In foutstatus') }}</div>
+      </div>
+    </div>
+
+    <!-- Mailboxes -->
+    <div style="font-size:14px; font-weight:800; margin-bottom:10px;">{{ _('Mailboxen') }}</div>
+    <div class="table" style="margin-bottom:26px;">
+      {% for r in rows %}
+        <div class="sys-row" style="align-items:flex-start;">
+          <div class="dot-9" style="margin-top:5px; border-radius:50%; background:{{ '#27AE60' if r.status == 'connected' else ('#EB5757' if r.status == 'error' else '#F2994A') }};"></div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:14px; font-weight:700;">
+              {{ r.email }}
+              <span class="tag" style="font-size:10px; padding:2px 7px; margin-left:6px; color:var(--muted);">{{ r.provider }}{{ (' · ' ~ _('gedeeld')) if r.shared }}</span>
+            </div>
+            <div style="font-size:12px; color:var(--muted);">
+              {{ r.org }} · {{ _('laatste sync:') }} {{ r.last_sync_rel }} · {{ _('interval') }} {{ r.interval }}s
+              {% if r.due %}<span style="color:#F2994A;"> · {{ _('nu due') }}</span>{% endif %}
+            </div>
+            {% if r.last_error %}
+              <div style="font-size:12px; color:#EB5757; margin-top:4px; font-family:ui-monospace,monospace; word-break:break-word;">⚠ {{ r.last_error }}</div>
+            {% endif %}
+          </div>
+          <span class="tag" style="font-size:11px; padding:3px 9px; color:{{ '#1F8A5B' if r.status == 'connected' else '#EB5757' }}; background:{{ 'var(--success-bg)' if r.status == 'connected' else 'var(--danger-bg)' }};">
+            {{ {'connected':_('Verbonden'),'error':_('Herverbinden'),'enabled':_('Aan')}.get(r.status, r.status) }}
+          </span>
+        </div>
+      {% else %}
+        <div class="sys-row"><div style="font-size:13px; color:var(--muted);">{{ _('Nog geen mailboxen gekoppeld.') }}</div></div>
+      {% endfor %}
+    </div>
+
+    <!-- Config -->
+    <div style="font-size:14px; font-weight:800; margin-bottom:10px;">{{ _('Configuratie') }}</div>
+    <div class="table">
+      {% for name, val, ok, help in config_rows %}
+        <div class="sys-row" style="align-items:flex-start;">
+          {% if ok is not none %}
+            <div class="dot-9" style="margin-top:5px; border-radius:50%; background:{{ '#27AE60' if ok else '#EB5757' }};"></div>
+          {% else %}
+            <div class="dot-9" style="margin-top:5px; border-radius:50%; background:var(--border, #ccc);"></div>
+          {% endif %}
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:700; font-family:ui-monospace,monospace;">{{ name }} = {{ val }}</div>
+            <div style="font-size:12px; color:var(--muted);">{{ help }}</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div style="margin-top:14px; display:flex; gap:8px;">
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('owner.health') }}">← {{ _('Systeemstatus') }}</a>
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('owner.debug') }}">{{ _('Foutenlog') }} →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

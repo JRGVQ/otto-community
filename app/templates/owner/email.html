@@ -1,0 +1,95 @@
+{% extends "owner/layout.html" %}
+{% block title %}{{ _('Platform — E-mail') }}{% endblock %}
+{% set badge = {'sent':(_('Verzonden'),'#1F8A5B','#EAF7F0'),'failed':(_('Mislukt'),'#EB5757','#FDECEC'),'no_mailer':(_('Geen mailer'),'#B7791F','#FEF4E7')} %}
+{% block screen %}
+<div class="screen-scroll">
+  <div class="screen-inner" style="max-width:920px;">
+    <div style="font-size:26px; font-weight:800; letter-spacing:-.02em;">{{ _('E-mail & sjablonen') }}</div>
+    <div class="page-sub">{{ _('Pas de uitgaande mails aan, stuur een test, en bekijk wat er verzonden is.') }}</div>
+
+    {% for cat, m in get_flashed_messages(with_categories=true) if cat in ['toast','info','error'] %}
+      <div class="alert alert-{{ 'error' if cat=='error' else 'info' }}">{{ m }}</div>
+    {% endfor %}
+
+    {% if not mailer_on %}
+      <div class="alert alert-error" style="display:flex; gap:10px; align-items:flex-start;">
+        <span>⚠️</span>
+        {% if mailer_missing %}
+          <div><strong>{{ _('Graph is gekozen, maar deze variabelen ontbreken:') }}</strong>
+            {% for v in mailer_missing %}<code>{{ v }}</code>{% if not loop.last %}, {% endif %}{% endfor %}.
+            {% trans %}Vul ze in en redeploy. Voor een <strong>gedeelde mailbox</strong>: zet
+            <code>GRAPH_MAIL_SENDER</code> op het adres van die mailbox (bv. <code>info@bedrijf.be</code>).{% endtrans %}</div>
+        {% else %}
+          <div><strong>{{ _('Er is geen mailer geconfigureerd') }}</strong> — {{ _('mails worden wel gelogd, maar niet verzonden.') }}
+            {% trans %}Stel <code>SMTP_HOST</code> in, of <code>MAIL_PROVIDER=graph</code> met de <code>GRAPH_MAIL_*</code>-instellingen (Microsoft 365), en redeploy.{% endtrans %}</div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {# ── Templates ── #}
+    {% for t in templates %}
+      <div class="card card-18" style="padding:22px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+          <div style="font-size:15px; font-weight:800;">{{ t.name }}</div>
+          {% if t.customized %}<span class="tag" style="color:var(--accent); background:var(--purple-150);">{{ _('aangepast') }}</span>{% endif %}
+        </div>
+        <div style="font-size:12.5px; color:var(--muted); margin-bottom:10px;">{{ t.desc }}
+          · {{ _('variabelen:') }} {% for v in t.vars %}<code style="font-size:11.5px;">{{ '{{' }}{{ v }}{{ '}}' }}</code>{% if not loop.last %} {% endif %}{% endfor %}</div>
+
+        <form method="post" action="{{ url_for('owner.email_save', key=t.key) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="label">{{ _('Onderwerp') }}</div>
+          <input class="input" name="subject" value="{{ t.subject }}">
+          <div class="label" style="margin-top:10px;">{{ _('HTML-inhoud') }}</div>
+          <textarea class="textarea" name="html" rows="7" style="font-family:ui-monospace,monospace; font-size:12.5px;">{{ t.html }}</textarea>
+          <div style="display:flex; gap:8px; margin-top:12px; align-items:center; flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" type="submit">{{ _('Opslaan') }}</button>
+            {% if t.customized %}
+              <button class="btn btn-ghost btn-sm" type="submit" formaction="{{ url_for('owner.email_reset', key=t.key) }}"
+                      style="color:var(--muted);">{{ _('Terug naar standaard') }}</button>
+            {% endif %}
+          </div>
+        </form>
+
+        <form method="post" action="{{ url_for('owner.email_test', key=t.key) }}"
+              style="display:flex; gap:8px; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--divider); flex-wrap:wrap;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <span style="font-size:12.5px; color:var(--muted);">📤 {{ _('HTML-test sturen naar:') }}</span>
+          <input class="input" name="to" type="email" value="{{ me.email }}" style="height:34px; width:auto; flex:none;">
+          <button class="btn btn-secondary btn-sm" type="submit">{{ _('Stuur test') }}</button>
+        </form>
+      </div>
+    {% endfor %}
+
+    {# ── Send log ── #}
+    <div style="font-size:18px; font-weight:800; margin:26px 0 10px;">{{ _('Verzendlog') }}</div>
+    {% if logs %}
+      <div class="table">
+        <div class="thead" style="grid-template-columns:1.2fr 1.6fr 2fr 1fr .9fr;">
+          <div>{{ _('Tijd') }}</div><div>{{ _('Aan') }}</div><div>{{ _('Onderwerp') }}</div><div>{{ _('Status') }}</div><div></div>
+        </div>
+        {% for l in logs %}
+          {% set b = badge.get(l.status, ('?','#9AA4B2','#F2F2F7')) %}
+          <div style="border-bottom:1px solid var(--divider);">
+            <div class="trow" style="grid-template-columns:1.2fr 1.6fr 2fr 1fr .9fr; align-items:center; border-bottom:none;">
+              <div style="font-size:12px; color:var(--muted);">{{ l.created_at.strftime('%d/%m %H:%M') if l.created_at else '—' }}</div>
+              <div class="nowrap" style="font-size:12.5px;">{{ l.to_addr }}</div>
+              <div class="nowrap" style="font-size:12.5px; color:var(--text-2);">{{ l.subject }}</div>
+              <div><span class="status-pill" style="color:{{ b[1] }}; background:{{ b[2] }};">{{ b[0] }}</span></div>
+              <div>
+                <form method="post" action="{{ url_for('owner.email_resend', log_id=l.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-ghost btn-sm" type="submit">{{ _('Opnieuw') }}</button>
+                </form>
+              </div>
+            </div>
+            {% if l.error %}<div style="font-size:11.5px; color:var(--danger); padding:0 14px 9px; word-break:break-word;">⚠ {{ l.error }}</div>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="font-size:13px; color:var(--muted);">{{ _('Nog geen mails verstuurd.') }}</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

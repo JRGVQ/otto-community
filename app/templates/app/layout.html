@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block body %}
+{# app-shell: onderscheidt de app van de owner-backoffice, die óók .sidebar gebruikt
+   maar zijn zijbalk gewoon houdt (de topbar-navigatie geldt alleen in de app). #}
+<div class="otto-shell app-shell">
+  {% set _ai = current_user.organization.ai if current_user.is_authenticated and current_user.organization else None %}
+  {% if capabilities.llm_stub and not (_ai and _ai.byo_api_key_enc) and current_user.has_perm('manageAI') %}
+  <div class="demo-banner" style="background:#B7791F;">
+    <span>🔑 <strong>{{ _('Er is nog geen AI-model gekoppeld') }}</strong> — {{ _('Otto sorteert nu met eenvoudige ingebouwde regels en schrijft voorbeeldconcepten. Voeg een AI-sleutel toe voor echte concepten.') }}</span>
+    <a href="{{ url_for('web.admin_screen', screen='ai') }}">{{ _('Sleutel instellen') }} →</a>
+  </div>
+  {% endif %}
+  {% include "app/_topbar.html" %}
+  <div class="nav-overlay" data-action="nav-toggle"></div>
+  <div class="body-row">
+    {% include "app/_sidebar.html" %}
+    <div class="col-resizer" data-resize="sidebar"></div>
+    <div class="main">
+      {% block screen %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% include "app/_category_modal.html" %}
+{% include "app/_task_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/inbox.js') }}"></script>
+<script src="{{ url_for('static', filename='js/snippets.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rules.js') }}"></script>
+<script src="{{ url_for('static', filename='js/categories.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
+<script src="{{ url_for('static', filename='js/panels.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modals.js') }}"></script>
+{% endblock %}
